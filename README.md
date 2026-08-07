@@ -4,9 +4,23 @@ AI Knowledge OS 是一个面向个人知识管理、企业 AI 落地、项目管
 
 它将 Obsidian Vault 中的 Markdown、Wikilink、标签、任务、Canvas、Bases 和原生 Graph 组织成统一的知识驾驶舱。
 
-> 当前版本：`1.0.0 Preview`
+> 当前版本：`1.1.0 Preview`
 >
 > 这是预览版，不是 Obsidian 官方插件。建议先在测试 Vault 中安装并备份重要数据。
+
+## 下载 v1.1.0
+
+- [AI-Knowledge-OS-Plugin-v1.1.0.zip](./AI-Knowledge-OS-Plugin-v1.1.0.zip)：已有 Obsidian Vault 的插件安装包。
+- [AI-Knowledge-OS-Starter-Vault-v1.1.0.zip](./AI-Knowledge-OS-Starter-Vault-v1.1.0.zip)：包含插件、脱敏模板、Canvas、Bases 和 Agent Definitions 的完整体验包。
+
+SHA-256：
+
+```text
+07e002c3c73d7a141c78bc4b8bcfa4b50c76461ce5a5072c1f3b8c9f1a0ba80e  AI-Knowledge-OS-Plugin-v1.1.0.zip
+a8e88caad54c384ab159ea15e47a0f783d10c5a6cce65f1dc5e2dafc79faaff5  AI-Knowledge-OS-Starter-Vault-v1.1.0.zip
+```
+
+仓库中保留的 `v1.0.0` 文件仅用于历史版本回退；新安装请使用 `v1.1.0`。
 
 ## 主要页面
 
@@ -24,7 +38,7 @@ AI Knowledge OS 是一个面向个人知识管理、企业 AI 落地、项目管
 - 推荐 Obsidian `1.13.4` 或更高版本
 - 插件清单声明的最低版本为 `1.8.0`
 - 建议启用 Obsidian 核心插件：Graph、Canvas、Bases、File Explorer
-- 如需使用 Claudian 交接功能，请另行安装 Claudian；当前开发环境使用 `2.0.41`
+- 如需真实执行 Agent，请另行安装并启用 Claudian；当前已适配版本为 `2.0.41`
 
 网页采集需要网络连接。语音输入依赖系统和 Obsidian 内置浏览器是否支持语音识别。
 
@@ -66,6 +80,9 @@ AI Knowledge OS 是一个面向个人知识管理、企业 AI 落地、项目管
 └── AI Knowledge OS/
     ├── 00-Inbox/
     ├── Agents/
+    │   ├── Definitions/
+    │   ├── Runs/
+    │   ├── Outputs/
     │   └── Agent Center.md
     ├── Analytics/
     │   └── Knowledge Analytics.md
@@ -94,6 +111,7 @@ AI Knowledge OS
 - Inbox 内容默认保存在 `AI Knowledge OS/00-Inbox`。
 - 已整理知识默认移动到 `AI Knowledge OS/Knowledge`。
 - 项目和分析报告分别保存在 `Projects` 与 `Analytics` 目录。
+- Agent 定义、运行记录和待验收输出分别保存在 `Agents/Definitions`、`Agents/Runs` 与 `Agents/Outputs`。
 
 因此，安装插件可以还原界面与工作流，但不会复制原作者的私人知识和统计结果。
 
@@ -121,15 +139,24 @@ AI Knowledge OS
 - 知识价值排序和结构缺口分析
 - Graph 主题聚类与节点摘要
 
-### 预览或半自动功能
+### 真实 Agent 执行
 
-- Agent“立即运行”目前创建任务模板，不会自动执行模型或工具。
-- Agent 状态、成功率和部分工具集成仍处于预览阶段。
-- Graph 主页面的语义节点和主题连线包含预设结构，不等同于完整的真实 Wikilink 图谱。
-- Claudian 按钮会打开 Claudian 并复制任务提示词，仍需用户确认和发送。
-- 部分筛选、通知、成员邀请和“查看全部”入口尚未完成。
+- Agent 使用 `queued → running → waiting-review → success/failed/blocked` 状态机。
+- “立即运行”和“交给 Claudian 深度处理”会通过兼容适配器自动创建 Claudian 会话并提交任务。
+- Claudian 返回结果后保存到 `Agents/Outputs`，任务先进入“待验收”。
+- 只有输出文件存在、内容不为空并由用户验收后，任务才会标记为成功。
+- Analytics 的 AI 成功率只统计 `Agents/Runs` 中的真实任务记录；旧版 Inbox 任务模板不会计入。
 
-请勿将上述预览功能用于需要无人值守执行或严格审计的业务流程。
+### 真实 Graph 与建议关系
+
+- Graph 主题节点保留现有视觉布局，但连线权重来自主题共现和实际 Wikilink。
+- “查看路径”使用真实知识图的 BFS 路径，不再拼接固定主题文案。
+- “隐藏关联”只作为建议展示，并明确给出共同邻居，绝不会冒充已经存在的链接。
+- 今日新增连接通过链接快照差异计算。
+
+### 仍在开发的控件
+
+通知、表情、助手附件、`@` 上下文以及部分“查看全部”入口保留现有外观，点击会明确提示“开发中”，不会静默无响应或产生假数据。
 
 ## 网页采集说明
 
@@ -176,7 +203,7 @@ AI Knowledge OS
 
 ### AI 按钮没有打开 Claudian
 
-确认已安装并启用 Claudian。未检测到 Claudian 时，部分功能只会把提示词复制到剪贴板。
+确认已安装并启用 Claudian `2.0.41`。未安装、未启用或版本不兼容时，任务会记录为 `blocked`，不会伪装成成功。
 
 ### 网页链接只能保存地址，无法保存正文
 
@@ -212,4 +239,3 @@ AI Knowledge OS
 ## 第三方许可
 
 网页正文提取能力包含 Defuddle。分发插件时请保留 `DEFUDDLE-LICENSE.txt`。
-
