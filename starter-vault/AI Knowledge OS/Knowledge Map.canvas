@@ -1,0 +1,21 @@
+{
+	"nodes":[
+		{"id":"4f19b0c2d7e63a81","type":"group","x":-780,"y":-360,"width":1560,"height":720,"color":"6","label":"AI Knowledge OS · 核心知识网络"},
+		{"id":"b2e3f4a5c6d70819","type":"file","file":"AI Knowledge OS/Knowledge/企业 AI 转型.md","x":-650,"y":-90,"width":300,"height":180,"color":"4"},
+		{"id":"c3f4a5b6d7e81920","type":"file","file":"AI Knowledge OS/Knowledge/知识库.md","x":350,"y":-90,"width":300,"height":180,"color":"5"},
+		{"id":"d4a5b6c7e8f92031","type":"file","file":"AI Knowledge OS/Knowledge/AI Agent.md","x":-150,"y":-300,"width":300,"height":150,"color":"5"},
+		{"id":"e5b6c7d8f9013242","type":"file","file":"AI Knowledge OS/Knowledge/自动化工作流.md","x":-150,"y":150,"width":300,"height":150,"color":"3"},
+		{"id":"f6c7d8e9012345a3","type":"file","file":"AI Knowledge OS/Projects/企业 AI 知识库产品化.md","x":350,"y":150,"width":300,"height":150,"color":"2"},
+		{"id":"07d8e9f0123456b4","type":"file","file":"AI主题地图.md","x":350,"y":-300,"width":300,"height":150,"color":"6"},
+		{"id":"a1f2e3d4c5b69788","type":"file","file":"AI Knowledge OS/Knowledge/FDE.md","x":-150,"y":-90,"width":300,"height":180,"color":"6"}
+	],
+	"edges":[
+		{"id":"18e9f0123456a7c5","fromNode":"b2e3f4a5c6d70819","fromSide":"right","toNode":"a1f2e3d4c5b69788","toSide":"left","color":"4","label":"落地角色"},
+		{"id":"29f0123456a7b8d6","fromNode":"a1f2e3d4c5b69788","fromSide":"right","toNode":"c3f4a5b6d7e81920","toSide":"left","color":"6","label":"建设"},
+		{"id":"3a0123456b7c8d9e","fromNode":"d4a5b6c7e8f92031","fromSide":"bottom","toNode":"a1f2e3d4c5b69788","toSide":"top","color":"5","label":"能力单元"},
+		{"id":"4b1234567c8d9e0f","fromNode":"a1f2e3d4c5b69788","fromSide":"bottom","toNode":"e5b6c7d8f9013242","toSide":"top","color":"3","label":"嵌入业务"},
+		{"id":"5c2345678d9e0f1a","fromNode":"c3f4a5b6d7e81920","fromSide":"bottom","toNode":"f6c7d8e9012345a3","toSide":"top","color":"2","label":"产品化"},
+		{"id":"6d3456789e0f1a2b","fromNode":"07d8e9f0123456b4","fromSide":"bottom","toNode":"c3f4a5b6d7e81920","toSide":"top","color":"6","label":"现有知识"},
+		{"id":"7e4567890f1a2b3c","fromNode":"e5b6c7d8f9013242","fromSide":"right","toNode":"f6c7d8e9012345a3","toSide":"left","color":"3","label":"形成交付"}
+	]
+}

@@ -1,0 +1,43 @@
+filters:
+  and:
+    - file.inFolder("AI Knowledge OS/Projects")
+    - file.ext == "md"
+formulas:
+  progress_label: if(progress, progress.toString() + "%", "0%")
+  urgency: if(due, if(date(due) < today() && status != "done", "⚠ 已逾期", (date(due) - today()).days.toString() + " 天"), "")
+properties:
+  file.name:
+    displayName: 项目
+  status:
+    displayName: 状态
+  progress:
+    displayName: 进度
+  formula.progress_label:
+    displayName: 完成度
+  next_action:
+    displayName: 下一步
+  due:
+    displayName: 截止日期
+  formula.urgency:
+    displayName: 时间
+views:
+  - type: cards
+    name: 进行中
+    filters:
+      and:
+        - status != "done"
+    order:
+      - file.name
+      - status
+      - formula.progress_label
+      - next_action
+      - due
+  - type: table
+    name: 全部项目
+    order:
+      - file.name
+      - status
+      - progress
+      - next_action
+      - due
+      - formula.urgency

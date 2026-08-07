@@ -8,19 +8,33 @@ AI Knowledge OS 是一个面向个人知识管理、企业 AI 落地、项目管
 >
 > 这是预览版，不是 Obsidian 官方插件。建议先在测试 Vault 中安装并备份重要数据。
 
-## 下载 v1.1.0
+## 获取项目
 
-- [AI-Knowledge-OS-Plugin-v1.1.0.zip](./AI-Knowledge-OS-Plugin-v1.1.0.zip)：已有 Obsidian Vault 的插件安装包。
-- [AI-Knowledge-OS-Starter-Vault-v1.1.0.zip](./AI-Knowledge-OS-Starter-Vault-v1.1.0.zip)：包含插件、脱敏模板、Canvas、Bases 和 Agent Definitions 的完整体验包。
+- 工程源码：直接克隆本仓库；`main` 保存当前开发版本。
+- 稳定版本：使用不可变的版本标签，例如 [`v1.1.0`](https://github.com/SnowMontain/Knowledge-OS/tree/v1.1.0)。
+- 安装包：从 [GitHub Releases](https://github.com/SnowMontain/Knowledge-OS/releases) 下载，不再把 ZIP 提交到 `main`。
 
-SHA-256：
-
-```text
-07e002c3c73d7a141c78bc4b8bcfa4b50c76461ce5a5072c1f3b8c9f1a0ba80e  AI-Knowledge-OS-Plugin-v1.1.0.zip
-a8e88caad54c384ab159ea15e47a0f783d10c5a6cce65f1dc5e2dafc79faaff5  AI-Knowledge-OS-Starter-Vault-v1.1.0.zip
+```bash
+git clone https://github.com/SnowMontain/Knowledge-OS.git
+cd Knowledge-OS
+npm ci
+npm run verify
 ```
 
-仓库中保留的 `v1.0.0` 文件仅用于历史版本回退；新安装请使用 `v1.1.0`。
+## 仓库结构
+
+```text
+Knowledge-OS/
+├── source.js              # 主要开发源码
+├── main.js                # Obsidian 加载的构建产物
+├── styles.css             # 界面样式
+├── manifest.json          # Obsidian 插件清单
+├── defuddle.js            # 网页正文解析依赖
+├── starter-vault/         # 脱敏模板、Canvas、Bases 与 Agent Definitions
+├── scripts/               # 发布元数据校验
+├── versions.json          # 插件版本与最低 Obsidian 版本映射
+└── CHANGELOG.md           # 版本变更记录
+```
 
 ## 主要页面
 
@@ -70,7 +84,7 @@ a8e88caad54c384ab159ea15e47a0f783d10c5a6cce65f1dc5e2dafc79faaff5  AI-Knowledge-O
 
 ## 安装方式二：安装完整体验包
 
-如果希望首次打开就具备模板、Base、Canvas 和说明页面，还需要将脱敏后的 `AI Knowledge OS` 文件夹复制到 Vault 根目录：
+如果希望首次打开就具备模板、Base、Canvas 和说明页面，把 `starter-vault/` 中的内容复制到目标 Vault，再按“安装方式一”复制插件运行文件：
 
 ```text
 你的 Vault/
@@ -234,8 +248,27 @@ AI Knowledge OS
 - `defuddle.js`：网页正文提取器开发依赖
 - `DEFUDDLE-LICENSE.txt`：Defuddle 开源许可
 
-修改 `source.js` 后需要重新构建 `main.js`，仅修改源文件不会影响 Obsidian 当前加载的插件。
+安装 Node.js 20 或更高版本后运行：
+
+```bash
+npm ci
+npm run build
+npm run verify
+```
+
+修改 `source.js` 后必须重新构建 `main.js`。`npm run verify` 会检查 JavaScript 语法、版本号一致性、必要发布文件和构建产物是否同步。
+
+## 版本管理
+
+- 使用语义化版本 `MAJOR.MINOR.PATCH`。
+- `manifest.json`、`package.json` 与 `versions.json` 必须保持一致。
+- 每个发布版本对应不可变 Git 标签 `vX.Y.Z`。
+- 版本变化记录在 [`CHANGELOG.md`](./CHANGELOG.md)。
+- ZIP 只放在 GitHub Release 中；仓库分支直接维护可审查的工程文件。
+- 贡献和发布步骤见 [`CONTRIBUTING.md`](./CONTRIBUTING.md)。
 
 ## 第三方许可
 
-网页正文提取能力包含 Defuddle。分发插件时请保留 `DEFUDDLE-LICENSE.txt`。
+AI Knowledge OS 使用 [MIT License](./LICENSE)。
+
+网页正文提取能力包含 Defuddle，其许可单独记录在 [`DEFUDDLE-LICENSE.txt`](./DEFUDDLE-LICENSE.txt)；分发插件时必须保留该文件。

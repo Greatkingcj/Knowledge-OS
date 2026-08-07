@@ -1,0 +1,36 @@
+filters:
+  and:
+    - 'file.ext == "md"'
+    - not:
+        - 'file.inFolder("AI Knowledge OS/Templates")'
+        - 'file.inFolder("AI Knowledge OS/00-Inbox")'
+properties:
+  file.name:
+    displayName: "知识"
+  domain:
+    displayName: "领域"
+  status:
+    displayName: "状态"
+  rating:
+    displayName: "价值"
+  file.mtime:
+    displayName: "最近更新"
+views:
+  - type: table
+    name: "最近更新"
+    limit: 30
+    order:
+      - file.name
+      - domain
+      - status
+      - rating
+      - file.mtime
+  - type: cards
+    name: "知识卡片"
+    limit: 48
+    order:
+      - file.name
+      - domain
+      - status
+      - rating
+

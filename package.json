@@ -1,0 +1,19 @@
+{
+  "name": "ai-knowledge-os",
+  "version": "1.1.0",
+  "private": true,
+  "description": "A local-first AI knowledge cockpit for Obsidian.",
+  "license": "MIT",
+  "scripts": {
+    "build": "esbuild source.js --bundle --platform=node --format=cjs --external:obsidian --outfile=main.js",
+    "check": "node scripts/check-release.mjs",
+    "lint": "node --check source.js && node --check scripts/check-release.mjs",
+    "verify": "npm run lint && npm run check && npm run build && git diff --exit-code -- main.js"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.9"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
