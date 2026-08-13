@@ -2,6 +2,12 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [1.2.2] - 2026-08-13
+
+### Fixed
+
+- 修复嵌入 Knowledge OS 后周视图内容超出可视区域却无法纵向滚动的问题。
+
 ## [1.2.1] - 2026-08-13
 
 ### Changed
@@ -50,6 +56,7 @@
 - Dashboard、Inbox、Knowledge、Graph、Projects、AI Agents 与 Analytics 页面。
 - 本地全文检索、网页采集、项目管理和知识分析基础能力。
 
+[1.2.2]: https://github.com/Greatkingcj/Knowledge-OS/compare/v1.2.1...v1.2.2
 [1.2.0]: https://github.com/Greatkingcj/Knowledge-OS/compare/v1.1.0...v1.2.0
 [1.2.1]: https://github.com/Greatkingcj/Knowledge-OS/compare/v1.2.0...v1.2.1
 [1.1.0]: https://github.com/SnowMontain/Knowledge-OS/compare/v1.0.0...v1.1.0

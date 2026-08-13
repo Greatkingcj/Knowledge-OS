@@ -4703,8 +4703,10 @@
   background-color: #7964ed;
 }
 
-/* Gantt Calendar sets year mode to visible overflow; restore a bounded scroll chain in the embed. */
+/* Gantt Calendar sets week/year modes to visible overflow; restore a bounded scroll chain in the embed. */
+.akos-native-gantt-host .view-content:has(.gc-view--week),
 .akos-native-gantt-host .view-content:has(.gc-view--year),
+.akos-native-gantt-host .calendar-content:has(.gc-view--week),
 .akos-native-gantt-host .calendar-content:has(.gc-view--year) {
   min-height: 0 !important;
   overflow-x: hidden !important;
@@ -4712,6 +4714,7 @@
   overscroll-behavior: contain;
 }
 
+.akos-native-gantt-host .gc-view.gc-view--week,
 .akos-native-gantt-host .gc-view.gc-view--year {
   height: auto !important;
   min-height: max-content !important;

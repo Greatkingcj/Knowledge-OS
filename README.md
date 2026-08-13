@@ -4,14 +4,14 @@ AI Knowledge OS 是一个面向个人知识管理、企业 AI 落地、项目管
 
 它将 Obsidian Vault 中的 Markdown、Wikilink、标签、任务、Canvas、Bases 和原生 Graph 组织成统一的知识驾驶舱。
 
-> 当前版本：`1.2.1 Preview`
+> 当前版本：`1.2.2 Preview`
 >
 > 这是预览版，不是 Obsidian 官方插件。建议先在测试 Vault 中安装并备份重要数据。
 
 ## 获取项目
 
 - 工程源码：直接克隆本仓库；`main` 保存当前开发版本。
-- 稳定版本：使用不可变的版本标签，例如 [`v1.2.1`](https://github.com/Greatkingcj/Knowledge-OS/tree/v1.2.1)。
+- 稳定版本：使用不可变的版本标签，例如 [`v1.2.2`](https://github.com/Greatkingcj/Knowledge-OS/tree/v1.2.2)。
 - 安装包：从 [GitHub Releases](https://github.com/Greatkingcj/Knowledge-OS/releases) 下载，不再把 ZIP 提交到 `main`。
 
 ```bash
