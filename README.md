@@ -4,18 +4,18 @@ AI Knowledge OS 是一个面向个人知识管理、企业 AI 落地、项目管
 
 它将 Obsidian Vault 中的 Markdown、Wikilink、标签、任务、Canvas、Bases 和原生 Graph 组织成统一的知识驾驶舱。
 
-> 当前版本：`1.1.0 Preview`
+> 当前版本：`1.2.0 Preview`
 >
 > 这是预览版，不是 Obsidian 官方插件。建议先在测试 Vault 中安装并备份重要数据。
 
 ## 获取项目
 
 - 工程源码：直接克隆本仓库；`main` 保存当前开发版本。
-- 稳定版本：使用不可变的版本标签，例如 [`v1.1.0`](https://github.com/SnowMontain/Knowledge-OS/tree/v1.1.0)。
-- 安装包：从 [GitHub Releases](https://github.com/SnowMontain/Knowledge-OS/releases) 下载，不再把 ZIP 提交到 `main`。
+- 稳定版本：使用不可变的版本标签，例如 [`v1.2.0`](https://github.com/Greatkingcj/Knowledge-OS/tree/v1.2.0)。
+- 安装包：从 [GitHub Releases](https://github.com/Greatkingcj/Knowledge-OS/releases) 下载，不再把 ZIP 提交到 `main`。
 
 ```bash
-git clone https://github.com/SnowMontain/Knowledge-OS.git
+git clone https://github.com/Greatkingcj/Knowledge-OS.git
 cd Knowledge-OS
 npm ci
 npm run verify
@@ -43,6 +43,7 @@ Knowledge-OS/
 - Knowledge：知识领域、收藏、标签、知识集合与原生关系图谱
 - Graph：主题节点、知识路径和关联概览
 - Projects：项目进度、任务、里程碑、关联知识和周报
+- Gantt：在 Knowledge OS 内容区嵌入 Gantt Calendar 的原生甘特时间线
 - AI Agents：智能体模板、运行任务和执行记录
 - Analytics：知识增长、链接、标签、知识价值和结构缺口分析
 
@@ -52,6 +53,7 @@ Knowledge-OS/
 - 推荐 Obsidian `1.13.4` 或更高版本
 - 插件清单声明的最低版本为 `1.8.0`
 - 建议启用 Obsidian 核心插件：Graph、Canvas、Bases、File Explorer
+- 甘特入口需要另行安装并启用 Gantt Calendar；Knowledge OS 不复制其代码或样式
 - 如需真实执行 Agent，请另行安装并启用 Claudian；当前已适配版本为 `2.0.41`
 
 网页采集需要网络连接。语音输入依赖系统和 Obsidian 内置浏览器是否支持语音识别。
@@ -81,6 +83,12 @@ Knowledge-OS/
 5. 通过左侧 Ribbon 图标或命令面板打开工作台。
 
 `source.js` 和独立的 `defuddle.js` 用于开发，不是运行插件的必需文件；网页解析代码已经打包到 `main.js` 中。
+
+### 甘特时间线
+
+启用 Gantt Calendar 后，Knowledge OS 左侧主导航会显示与 Dashboard、Projects 平级的 `Gantt / 甘特时间线`。点击入口或执行“AI Knowledge OS: 打开甘特时间线”命令会打开 `Gantt · AI Knowledge OS` 页面：左侧主导航和右侧 AI 助手保持不变，中间内容区挂载 Gantt Calendar 的原生 Gantt 视图。数据仍来自 Vault 中的 Markdown 任务，不需要启动 Web 服务。
+
+如果 Gantt Calendar 未安装或未启用，Knowledge OS 只显示提示，不会创建假数据或降级到外部页面。
 
 ## 安装方式二：安装完整体验包
 

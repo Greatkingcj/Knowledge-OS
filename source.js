@@ -18,8 +18,11 @@ const INBOX_VIEW_TYPE = "ai-knowledge-os-inbox";
 const KNOWLEDGE_VIEW_TYPE = "ai-knowledge-os-knowledge";
 const GRAPH_VIEW_TYPE = "ai-knowledge-os-graph";
 const PROJECT_VIEW_TYPE = "ai-knowledge-os-projects";
+const GANTT_VIEW_TYPE = "ai-knowledge-os-gantt";
 const AGENT_VIEW_TYPE = "ai-knowledge-os-agents";
 const ANALYTICS_VIEW_TYPE = "ai-knowledge-os-analytics";
+const GANTT_PLUGIN_ID = "gantt-calendar";
+const GANTT_NATIVE_VIEW_TYPE = "gantt-calendar-view";
 const CLAUDIAN_VIEW_TYPE = "claudian-view";
 const ROOT = "AI Knowledge OS";
 
@@ -363,6 +366,7 @@ class KnowledgeOSRouter {
       case "knowledge": return this.plugin.activateKnowledge(params);
       case "graph": return this.plugin.activateGraph(params);
       case "projects": return this.plugin.activateProjects(params);
+      case "gantt": return this.plugin.activateGantt(params);
       case "agents": return this.plugin.activateAgents(params);
       case "analytics": return this.plugin.activateAnalytics(params);
       case "settings": return this.plugin.openSettings(params.section);
@@ -936,6 +940,7 @@ class InboxView extends ItemView {
       ["Knowledge", "知识中心", "book-open", () => this.plugin.router.navigate("knowledge")],
       ["Graph", "知识网络", "share-2", () => this.plugin.router.navigate("graph")],
       ["Projects", "项目管理", "folder-kanban", () => this.plugin.router.navigate("projects")],
+      ["Gantt", "甘特时间线", "chart-gantt", () => this.plugin.router.navigate("gantt")],
       ["AI Agents", "智能体中心", "bot", () => this.plugin.router.navigate("agents")],
       ["Analytics", "数据分析", "chart-no-axes-combined", () => this.plugin.router.navigate("analytics")],
     ];
@@ -1846,6 +1851,7 @@ class KnowledgeDashboardView extends ItemView {
       ["Knowledge", "知识中心", "book-open", () => this.plugin.router.navigate("knowledge")],
       ["Graph", "知识网络", "share-2", () => this.plugin.router.navigate("graph")],
       ["Projects", "项目管理", "folder-kanban", () => this.plugin.router.navigate("projects")],
+      ["Gantt", "甘特时间线", "chart-gantt", () => this.plugin.router.navigate("gantt")],
       ["AI Agents", "智能体中心", "bot", () => this.plugin.router.navigate("agents")],
       ["Analytics", "数据分析", "chart-no-axes-combined", () => this.plugin.router.navigate("analytics")],
     ];
@@ -4092,6 +4098,130 @@ class ProjectCenterView extends KnowledgeDashboardView {
   }
 }
 
+class KnowledgeGanttView extends KnowledgeDashboardView {
+  constructor(leaf, plugin) {
+    super(leaf, plugin);
+    this.nativeGanttLeaf = null;
+    this.nativeGanttReady = null;
+    this.nativeGanttHost = null;
+    this.refresh = debounce(() => this.render(), 350);
+  }
+
+  getViewType() { return GANTT_VIEW_TYPE; }
+  getDisplayText() { return "Gantt · AI Knowledge OS"; }
+  getIcon() { return "chart-gantt"; }
+
+  async onOpen() {
+    this.contentEl.addClass("akos-view-content", "akos-gantt-view-content");
+    await this.render();
+  }
+
+  async onClose() {
+    this.nativeGanttHost = null;
+    if (this.nativeGanttLeaf) {
+      this.nativeGanttLeaf.detach();
+      this.nativeGanttLeaf = null;
+      this.nativeGanttReady = null;
+    }
+    this.contentEl.removeClass("akos-view-content", "akos-gantt-view-content");
+  }
+
+  async render() {
+    const stats = this.getStats();
+    const root = this.contentEl;
+    root.empty();
+    const app = root.createDiv({ cls: "akos-app akos-gantt-app" });
+    this.renderGanttSidebar(app, stats);
+    const center = app.createDiv({ cls: "akos-center akos-gantt-center" });
+    this.renderGanttTopbar(center);
+    const scroll = center.createDiv({ cls: "akos-scroll akos-gantt-scroll" });
+    this.renderGanttHeader(scroll);
+    const panel = scroll.createDiv({ cls: "akos-panel akos-gantt-panel" });
+    const host = panel.createDiv({ cls: "akos-native-gantt-host" });
+    host.createDiv({ text: "正在载入 Gantt Calendar 时间线…", cls: "akos-native-gantt-loading" });
+    void this.mountNativeGantt(host);
+    this.renderStatus(center, stats);
+    this.renderCopilot(app, stats);
+  }
+
+  renderGanttSidebar(app, stats) {
+    super.renderSidebar(app, stats);
+    app.querySelectorAll(".akos-nav-item").forEach((button) => {
+      button.classList.toggle("is-active", button.querySelector(".akos-nav-title")?.textContent === "Gantt");
+    });
+  }
+
+  renderGanttTopbar(center) {
+    const topbar = center.createDiv({ cls: "akos-topbar" });
+    const title = topbar.createDiv({ cls: "akos-search akos-gantt-title" });
+    createIcon(title, "chart-gantt");
+    title.createSpan({ text: "Markdown Tasks · 本地时间线" });
+    const actions = topbar.createDiv({ cls: "akos-top-actions" });
+    createButton(actions, "刷新任务", "refresh-cw", "akos-top-action").addEventListener("click", () => this.refreshNativeGantt());
+    createButton(actions, "AI 助手", "sparkles", "akos-top-action").addEventListener("click", () => this.focusPrompt());
+    const avatar = actions.createEl("button", { cls: "akos-avatar-button" });
+    avatar.createSpan({ text: (this.plugin.settings.userName || "E").charAt(0).toUpperCase(), cls: "akos-avatar" });
+    avatar.createSpan({ text: this.plugin.settings.userName || "Ethan" });
+  }
+
+  renderGanttHeader(parent) {
+    const header = parent.createDiv({ cls: "akos-gantt-header" });
+    const copy = header.createDiv();
+    copy.createEl("h1", { text: "Gantt" });
+    copy.createEl("p", { text: "在 Knowledge OS 中查看与维护整个 Vault 的任务时间线。" });
+    const hint = header.createDiv({ cls: "akos-gantt-date-hint" });
+    createIcon(hint, "info");
+    hint.createSpan({ text: "🛫 开始日期 · 📅 截止日期" });
+  }
+
+  async mountNativeGantt(host) {
+    this.nativeGanttHost = host;
+    const ganttPlugin = this.app.plugins?.plugins?.[GANTT_PLUGIN_ID];
+    if (!ganttPlugin) {
+      this.renderGanttFallback(host, "请先安装并启用 Gantt Calendar 插件");
+      return;
+    }
+    try {
+      if (!this.nativeGanttLeaf) {
+        const WorkspaceLeafClass = this.leaf.constructor;
+        const leaf = new WorkspaceLeafClass(this.app);
+        leaf.containerEl.addClass("akos-embedded-gantt-leaf");
+        this.nativeGanttLeaf = leaf;
+        this.nativeGanttReady = leaf.setViewState({ type: GANTT_NATIVE_VIEW_TYPE, active: false });
+      }
+      host.appendChild(this.nativeGanttLeaf.containerEl);
+      await this.nativeGanttReady;
+      if (this.nativeGanttHost !== host || !host.isConnected || !this.nativeGanttLeaf) return;
+      host.appendChild(this.nativeGanttLeaf.containerEl);
+      if (typeof this.nativeGanttLeaf.view?.switchView === "function") {
+        await this.nativeGanttLeaf.view.switchView("gantt");
+      }
+      host.querySelector(".akos-native-gantt-loading")?.remove();
+      window.requestAnimationFrame(() => this.nativeGanttLeaf?.view?.onResize?.());
+    } catch (error) {
+      console.error("AI Knowledge OS: failed to mount Gantt Calendar", error);
+      this.renderGanttFallback(host, `甘特时间线载入失败：${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  renderGanttFallback(host, message) {
+    if (this.nativeGanttHost !== host) return;
+    host.empty();
+    const fallback = host.createDiv({ cls: "akos-native-gantt-fallback" });
+    createIcon(fallback, "chart-gantt");
+    fallback.createEl("strong", { text: message });
+    fallback.createEl("p", { text: "Knowledge OS 不会复制任务数据；启用依赖后会直接读取 Vault 中的 Markdown Tasks。" });
+  }
+
+  refreshNativeGantt() {
+    const ganttPlugin = this.app.plugins?.plugins?.[GANTT_PLUGIN_ID];
+    ganttPlugin?.refreshCalendarViews?.();
+    this.nativeGanttLeaf?.view?.refresh?.();
+    this.nativeGanttLeaf?.view?.onResize?.();
+    new Notice("甘特任务已刷新");
+  }
+}
+
 class AgentCenterView extends KnowledgeDashboardView {
   constructor(leaf, plugin) {
     super(leaf, plugin);
@@ -4729,6 +4859,7 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
     this.registerView(KNOWLEDGE_VIEW_TYPE, (leaf) => new KnowledgeCenterView(leaf, this));
     this.registerView(GRAPH_VIEW_TYPE, (leaf) => new KnowledgeGraphView(leaf, this));
     this.registerView(PROJECT_VIEW_TYPE, (leaf) => new ProjectCenterView(leaf, this));
+    this.registerView(GANTT_VIEW_TYPE, (leaf) => new KnowledgeGanttView(leaf, this));
     this.registerView(AGENT_VIEW_TYPE, (leaf) => new AgentCenterView(leaf, this));
     this.registerView(ANALYTICS_VIEW_TYPE, (leaf) => new KnowledgeAnalyticsView(leaf, this));
     this.addRibbonIcon("brain-circuit", "打开 AI Knowledge OS", () => this.activateView());
@@ -4764,6 +4895,11 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
       id: "open-project-center",
       name: "打开项目中心",
       callback: () => this.activateProjects(),
+    });
+    this.addCommand({
+      id: "open-gantt-timeline",
+      name: "打开甘特时间线",
+      callback: () => this.activateGantt(),
     });
     this.addCommand({
       id: "open-agent-center",
@@ -4845,6 +4981,7 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
     this.app.workspace.detachLeavesOfType(KNOWLEDGE_VIEW_TYPE);
     this.app.workspace.detachLeavesOfType(GRAPH_VIEW_TYPE);
     this.app.workspace.detachLeavesOfType(PROJECT_VIEW_TYPE);
+    this.app.workspace.detachLeavesOfType(GANTT_VIEW_TYPE);
     this.app.workspace.detachLeavesOfType(AGENT_VIEW_TYPE);
     this.app.workspace.detachLeavesOfType(ANALYTICS_VIEW_TYPE);
   }
@@ -4877,6 +5014,10 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
     return this.app.workspace.getLeavesOfType(PROJECT_VIEW_TYPE)[0]?.view || null;
   }
 
+  getGantt() {
+    return this.app.workspace.getLeavesOfType(GANTT_VIEW_TYPE)[0]?.view || null;
+  }
+
   getAgents() {
     return this.app.workspace.getLeavesOfType(AGENT_VIEW_TYPE)[0]?.view || null;
   }
@@ -4896,6 +5037,8 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
     if (graph && typeof graph.render === "function") graph.refresh();
     const projects = this.getProjects();
     if (projects && typeof projects.render === "function") projects.refresh();
+    const gantt = this.getGantt();
+    if (gantt && typeof gantt.render === "function") gantt.refresh();
     const agents = this.getAgents();
     if (agents && typeof agents.render === "function") agents.refresh();
     const analytics = this.getAnalytics();
@@ -4965,6 +5108,19 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
     if (!leaf) {
       leaf = this.app.workspace.getLeaf("tab");
       await leaf.setViewState({ type: PROJECT_VIEW_TYPE, active: true });
+    }
+    await this.revealKnowledgeLeaf(leaf);
+    if (this.settings.immersiveMode) {
+      this.app.workspace.leftSplit?.collapse();
+      this.app.workspace.rightSplit?.collapse();
+    }
+  }
+
+  async activateGantt() {
+    let leaf = this.app.workspace.getLeavesOfType(GANTT_VIEW_TYPE)[0];
+    if (!leaf) {
+      leaf = this.app.workspace.getLeaf("tab");
+      await leaf.setViewState({ type: GANTT_VIEW_TYPE, active: true });
     }
     await this.revealKnowledgeLeaf(leaf);
     if (this.settings.immersiveMode) {

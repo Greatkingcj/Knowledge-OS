@@ -2,6 +2,18 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [1.2.0] - 2026-08-13
+
+### Added
+
+- Knowledge OS 左侧主导航新增与 Dashboard 平级的 Gantt 页面。
+- 新增“打开甘特时间线”命令，在 Knowledge OS 内容区挂载 Gantt Calendar 的原生视图并保留两侧工作台框架。
+- 未安装或未启用 Gantt Calendar 时显示明确提示，不创建替代页面或隐藏服务依赖。
+
+### Changed
+
+- 项目模板增加 Tasks 格式的开始日期和截止日期示例，创建后可直接进入甘特时间线。
+
 ## [1.1.0] - 2026-08-07
 
 ### Added
@@ -26,5 +38,6 @@
 - Dashboard、Inbox、Knowledge、Graph、Projects、AI Agents 与 Analytics 页面。
 - 本地全文检索、网页采集、项目管理和知识分析基础能力。
 
+[1.2.0]: https://github.com/Greatkingcj/Knowledge-OS/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/SnowMontain/Knowledge-OS/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/SnowMontain/Knowledge-OS/releases/tag/v1.0.0

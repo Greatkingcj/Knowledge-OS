@@ -7954,8 +7954,11 @@ var INBOX_VIEW_TYPE = "ai-knowledge-os-inbox";
 var KNOWLEDGE_VIEW_TYPE = "ai-knowledge-os-knowledge";
 var GRAPH_VIEW_TYPE = "ai-knowledge-os-graph";
 var PROJECT_VIEW_TYPE = "ai-knowledge-os-projects";
+var GANTT_VIEW_TYPE = "ai-knowledge-os-gantt";
 var AGENT_VIEW_TYPE = "ai-knowledge-os-agents";
 var ANALYTICS_VIEW_TYPE = "ai-knowledge-os-analytics";
+var GANTT_PLUGIN_ID = "gantt-calendar";
+var GANTT_NATIVE_VIEW_TYPE = "gantt-calendar-view";
 var ROOT = "AI Knowledge OS";
 var FEATURE_STATUS = Object.freeze({
   IMPLEMENTED: "implemented",
@@ -8240,6 +8243,8 @@ var KnowledgeOSRouter = class {
         return this.plugin.activateGraph(params);
       case "projects":
         return this.plugin.activateProjects(params);
+      case "gantt":
+        return this.plugin.activateGantt(params);
       case "agents":
         return this.plugin.activateAgents(params);
       case "analytics":
@@ -8852,6 +8857,7 @@ var InboxView = class extends ItemView {
       ["Knowledge", "\u77E5\u8BC6\u4E2D\u5FC3", "book-open", () => this.plugin.router.navigate("knowledge")],
       ["Graph", "\u77E5\u8BC6\u7F51\u7EDC", "share-2", () => this.plugin.router.navigate("graph")],
       ["Projects", "\u9879\u76EE\u7BA1\u7406", "folder-kanban", () => this.plugin.router.navigate("projects")],
+      ["Gantt", "\u7518\u7279\u65F6\u95F4\u7EBF", "chart-gantt", () => this.plugin.router.navigate("gantt")],
       ["AI Agents", "\u667A\u80FD\u4F53\u4E2D\u5FC3", "bot", () => this.plugin.router.navigate("agents")],
       ["Analytics", "\u6570\u636E\u5206\u6790", "chart-no-axes-combined", () => this.plugin.router.navigate("analytics")]
     ];
@@ -9813,6 +9819,7 @@ var KnowledgeDashboardView = class extends ItemView {
       ["Knowledge", "\u77E5\u8BC6\u4E2D\u5FC3", "book-open", () => this.plugin.router.navigate("knowledge")],
       ["Graph", "\u77E5\u8BC6\u7F51\u7EDC", "share-2", () => this.plugin.router.navigate("graph")],
       ["Projects", "\u9879\u76EE\u7BA1\u7406", "folder-kanban", () => this.plugin.router.navigate("projects")],
+      ["Gantt", "\u7518\u7279\u65F6\u95F4\u7EBF", "chart-gantt", () => this.plugin.router.navigate("gantt")],
       ["AI Agents", "\u667A\u80FD\u4F53\u4E2D\u5FC3", "bot", () => this.plugin.router.navigate("agents")],
       ["Analytics", "\u6570\u636E\u5206\u6790", "chart-no-axes-combined", () => this.plugin.router.navigate("analytics")]
     ];
@@ -12093,6 +12100,125 @@ ${pending}
     new Notice("\u9879\u76EE\u5468\u62A5\u5DF2\u751F\u6210");
   }
 };
+var KnowledgeGanttView = class extends KnowledgeDashboardView {
+  constructor(leaf, plugin) {
+    super(leaf, plugin);
+    this.nativeGanttLeaf = null;
+    this.nativeGanttReady = null;
+    this.nativeGanttHost = null;
+    this.refresh = debounce(() => this.render(), 350);
+  }
+  getViewType() {
+    return GANTT_VIEW_TYPE;
+  }
+  getDisplayText() {
+    return "Gantt \xB7 AI Knowledge OS";
+  }
+  getIcon() {
+    return "chart-gantt";
+  }
+  async onOpen() {
+    this.contentEl.addClass("akos-view-content", "akos-gantt-view-content");
+    await this.render();
+  }
+  async onClose() {
+    this.nativeGanttHost = null;
+    if (this.nativeGanttLeaf) {
+      this.nativeGanttLeaf.detach();
+      this.nativeGanttLeaf = null;
+      this.nativeGanttReady = null;
+    }
+    this.contentEl.removeClass("akos-view-content", "akos-gantt-view-content");
+  }
+  async render() {
+    const stats = this.getStats();
+    const root = this.contentEl;
+    root.empty();
+    const app = root.createDiv({ cls: "akos-app akos-gantt-app" });
+    this.renderGanttSidebar(app, stats);
+    const center = app.createDiv({ cls: "akos-center akos-gantt-center" });
+    this.renderGanttTopbar(center);
+    const scroll = center.createDiv({ cls: "akos-scroll akos-gantt-scroll" });
+    this.renderGanttHeader(scroll);
+    const panel = scroll.createDiv({ cls: "akos-panel akos-gantt-panel" });
+    const host = panel.createDiv({ cls: "akos-native-gantt-host" });
+    host.createDiv({ text: "\u6B63\u5728\u8F7D\u5165 Gantt Calendar \u65F6\u95F4\u7EBF\u2026", cls: "akos-native-gantt-loading" });
+    void this.mountNativeGantt(host);
+    this.renderStatus(center, stats);
+    this.renderCopilot(app, stats);
+  }
+  renderGanttSidebar(app, stats) {
+    super.renderSidebar(app, stats);
+    app.querySelectorAll(".akos-nav-item").forEach((button) => {
+      button.classList.toggle("is-active", button.querySelector(".akos-nav-title")?.textContent === "Gantt");
+    });
+  }
+  renderGanttTopbar(center) {
+    const topbar = center.createDiv({ cls: "akos-topbar" });
+    const title = topbar.createDiv({ cls: "akos-search akos-gantt-title" });
+    createIcon(title, "chart-gantt");
+    title.createSpan({ text: "Markdown Tasks \xB7 \u672C\u5730\u65F6\u95F4\u7EBF" });
+    const actions = topbar.createDiv({ cls: "akos-top-actions" });
+    createButton(actions, "\u5237\u65B0\u4EFB\u52A1", "refresh-cw", "akos-top-action").addEventListener("click", () => this.refreshNativeGantt());
+    createButton(actions, "AI \u52A9\u624B", "sparkles", "akos-top-action").addEventListener("click", () => this.focusPrompt());
+    const avatar = actions.createEl("button", { cls: "akos-avatar-button" });
+    avatar.createSpan({ text: (this.plugin.settings.userName || "E").charAt(0).toUpperCase(), cls: "akos-avatar" });
+    avatar.createSpan({ text: this.plugin.settings.userName || "Ethan" });
+  }
+  renderGanttHeader(parent) {
+    const header = parent.createDiv({ cls: "akos-gantt-header" });
+    const copy = header.createDiv();
+    copy.createEl("h1", { text: "Gantt" });
+    copy.createEl("p", { text: "\u5728 Knowledge OS \u4E2D\u67E5\u770B\u4E0E\u7EF4\u62A4\u6574\u4E2A Vault \u7684\u4EFB\u52A1\u65F6\u95F4\u7EBF\u3002" });
+    const hint = header.createDiv({ cls: "akos-gantt-date-hint" });
+    createIcon(hint, "info");
+    hint.createSpan({ text: "\u{1F6EB} \u5F00\u59CB\u65E5\u671F \xB7 \u{1F4C5} \u622A\u6B62\u65E5\u671F" });
+  }
+  async mountNativeGantt(host) {
+    this.nativeGanttHost = host;
+    const ganttPlugin = this.app.plugins?.plugins?.[GANTT_PLUGIN_ID];
+    if (!ganttPlugin) {
+      this.renderGanttFallback(host, "\u8BF7\u5148\u5B89\u88C5\u5E76\u542F\u7528 Gantt Calendar \u63D2\u4EF6");
+      return;
+    }
+    try {
+      if (!this.nativeGanttLeaf) {
+        const WorkspaceLeafClass = this.leaf.constructor;
+        const leaf = new WorkspaceLeafClass(this.app);
+        leaf.containerEl.addClass("akos-embedded-gantt-leaf");
+        this.nativeGanttLeaf = leaf;
+        this.nativeGanttReady = leaf.setViewState({ type: GANTT_NATIVE_VIEW_TYPE, active: false });
+      }
+      host.appendChild(this.nativeGanttLeaf.containerEl);
+      await this.nativeGanttReady;
+      if (this.nativeGanttHost !== host || !host.isConnected || !this.nativeGanttLeaf) return;
+      host.appendChild(this.nativeGanttLeaf.containerEl);
+      if (typeof this.nativeGanttLeaf.view?.switchView === "function") {
+        await this.nativeGanttLeaf.view.switchView("gantt");
+      }
+      host.querySelector(".akos-native-gantt-loading")?.remove();
+      window.requestAnimationFrame(() => this.nativeGanttLeaf?.view?.onResize?.());
+    } catch (error) {
+      console.error("AI Knowledge OS: failed to mount Gantt Calendar", error);
+      this.renderGanttFallback(host, `\u7518\u7279\u65F6\u95F4\u7EBF\u8F7D\u5165\u5931\u8D25\uFF1A${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  renderGanttFallback(host, message) {
+    if (this.nativeGanttHost !== host) return;
+    host.empty();
+    const fallback = host.createDiv({ cls: "akos-native-gantt-fallback" });
+    createIcon(fallback, "chart-gantt");
+    fallback.createEl("strong", { text: message });
+    fallback.createEl("p", { text: "Knowledge OS \u4E0D\u4F1A\u590D\u5236\u4EFB\u52A1\u6570\u636E\uFF1B\u542F\u7528\u4F9D\u8D56\u540E\u4F1A\u76F4\u63A5\u8BFB\u53D6 Vault \u4E2D\u7684 Markdown Tasks\u3002" });
+  }
+  refreshNativeGantt() {
+    const ganttPlugin = this.app.plugins?.plugins?.[GANTT_PLUGIN_ID];
+    ganttPlugin?.refreshCalendarViews?.();
+    this.nativeGanttLeaf?.view?.refresh?.();
+    this.nativeGanttLeaf?.view?.onResize?.();
+    new Notice("\u7518\u7279\u4EFB\u52A1\u5DF2\u5237\u65B0");
+  }
+};
 var AgentCenterView = class extends KnowledgeDashboardView {
   constructor(leaf, plugin) {
     super(leaf, plugin);
@@ -12886,6 +13012,7 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
     this.registerView(KNOWLEDGE_VIEW_TYPE, (leaf) => new KnowledgeCenterView(leaf, this));
     this.registerView(GRAPH_VIEW_TYPE, (leaf) => new KnowledgeGraphView(leaf, this));
     this.registerView(PROJECT_VIEW_TYPE, (leaf) => new ProjectCenterView(leaf, this));
+    this.registerView(GANTT_VIEW_TYPE, (leaf) => new KnowledgeGanttView(leaf, this));
     this.registerView(AGENT_VIEW_TYPE, (leaf) => new AgentCenterView(leaf, this));
     this.registerView(ANALYTICS_VIEW_TYPE, (leaf) => new KnowledgeAnalyticsView(leaf, this));
     this.addRibbonIcon("brain-circuit", "\u6253\u5F00 AI Knowledge OS", () => this.activateView());
@@ -12921,6 +13048,11 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
       id: "open-project-center",
       name: "\u6253\u5F00\u9879\u76EE\u4E2D\u5FC3",
       callback: () => this.activateProjects()
+    });
+    this.addCommand({
+      id: "open-gantt-timeline",
+      name: "\u6253\u5F00\u7518\u7279\u65F6\u95F4\u7EBF",
+      callback: () => this.activateGantt()
     });
     this.addCommand({
       id: "open-agent-center",
@@ -12995,6 +13127,7 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
     this.app.workspace.detachLeavesOfType(KNOWLEDGE_VIEW_TYPE);
     this.app.workspace.detachLeavesOfType(GRAPH_VIEW_TYPE);
     this.app.workspace.detachLeavesOfType(PROJECT_VIEW_TYPE);
+    this.app.workspace.detachLeavesOfType(GANTT_VIEW_TYPE);
     this.app.workspace.detachLeavesOfType(AGENT_VIEW_TYPE);
     this.app.workspace.detachLeavesOfType(ANALYTICS_VIEW_TYPE);
   }
@@ -13019,6 +13152,9 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
   getProjects() {
     return this.app.workspace.getLeavesOfType(PROJECT_VIEW_TYPE)[0]?.view || null;
   }
+  getGantt() {
+    return this.app.workspace.getLeavesOfType(GANTT_VIEW_TYPE)[0]?.view || null;
+  }
   getAgents() {
     return this.app.workspace.getLeavesOfType(AGENT_VIEW_TYPE)[0]?.view || null;
   }
@@ -13036,6 +13172,8 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
     if (graph && typeof graph.render === "function") graph.refresh();
     const projects = this.getProjects();
     if (projects && typeof projects.render === "function") projects.refresh();
+    const gantt = this.getGantt();
+    if (gantt && typeof gantt.render === "function") gantt.refresh();
     const agents = this.getAgents();
     if (agents && typeof agents.render === "function") agents.refresh();
     const analytics = this.getAnalytics();
@@ -13099,6 +13237,18 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
     if (!leaf) {
       leaf = this.app.workspace.getLeaf("tab");
       await leaf.setViewState({ type: PROJECT_VIEW_TYPE, active: true });
+    }
+    await this.revealKnowledgeLeaf(leaf);
+    if (this.settings.immersiveMode) {
+      this.app.workspace.leftSplit?.collapse();
+      this.app.workspace.rightSplit?.collapse();
+    }
+  }
+  async activateGantt() {
+    let leaf = this.app.workspace.getLeavesOfType(GANTT_VIEW_TYPE)[0];
+    if (!leaf) {
+      leaf = this.app.workspace.getLeaf("tab");
+      await leaf.setViewState({ type: GANTT_VIEW_TYPE, active: true });
     }
     await this.revealKnowledgeLeaf(leaf);
     if (this.settings.immersiveMode) {

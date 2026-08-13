@@ -4453,6 +4453,127 @@
   --akos-project-purple: #7f5cff;
 }
 
+/* Gantt: keep the Knowledge OS shell while mounting Gantt Calendar's native view. */
+.akos-gantt-scroll {
+  display: flex;
+  min-height: 0;
+  padding: 14px 18px 18px;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.akos-gantt-app {
+  grid-template-columns: 205px minmax(0, 1fr) 320px;
+}
+
+.akos-gantt-app.is-copilot-collapsed {
+  grid-template-columns: 205px minmax(0, 1fr) 0;
+}
+
+.akos-gantt-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 12px;
+  flex: 0 0 auto;
+}
+
+.akos-gantt-header h1 {
+  margin: 0;
+  color: #f1f3fb;
+  font-size: 18px;
+  line-height: 1.15;
+  letter-spacing: -.3px;
+}
+
+.akos-gantt-header p {
+  margin: 5px 0 0;
+  color: #7c859e;
+  font-size: 9px;
+}
+
+.akos-gantt-date-hint,
+.akos-gantt-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #8e98ae;
+  font-size: var(--akos-type-meta);
+}
+
+.akos-gantt-date-hint {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid rgba(114, 126, 164, .14);
+  border-radius: 7px;
+  background: rgba(14, 19, 30, .72);
+}
+
+.akos-gantt-panel,
+.akos-native-gantt-host {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.akos-native-gantt-host {
+  height: 100%;
+  background: #080c15;
+}
+
+.akos-native-gantt-loading,
+.akos-native-gantt-fallback {
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 24px;
+  color: #8e98ae;
+  font-size: var(--akos-type-meta);
+  text-align: center;
+  background: #080c15;
+}
+
+.akos-native-gantt-fallback .akos-icon {
+  width: 28px;
+  height: 28px;
+  color: #9f88ff;
+}
+
+.akos-native-gantt-fallback p {
+  max-width: 480px;
+  margin: 0;
+  color: #69758d;
+}
+
+.akos-native-gantt-host > .workspace-leaf,
+.akos-native-gantt-host > .workspace-leaf > .workspace-leaf-content,
+.akos-native-gantt-host .view-content {
+  position: relative !important;
+  inset: auto !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+.akos-native-gantt-host .view-header {
+  display: none !important;
+}
+
+.akos-native-gantt-host .view-content {
+  padding: 0 !important;
+}
+
 .akos-project-scroll {
   padding: 14px 18px 18px;
 }
