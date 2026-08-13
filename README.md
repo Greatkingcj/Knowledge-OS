@@ -4,14 +4,14 @@ AI Knowledge OS 是一个面向个人知识管理、企业 AI 落地、项目管
 
 它将 Obsidian Vault 中的 Markdown、Wikilink、标签、任务、Canvas、Bases 和原生 Graph 组织成统一的知识驾驶舱。
 
-> 当前版本：`1.2.0 Preview`
+> 当前版本：`1.2.1 Preview`
 >
 > 这是预览版，不是 Obsidian 官方插件。建议先在测试 Vault 中安装并备份重要数据。
 
 ## 获取项目
 
 - 工程源码：直接克隆本仓库；`main` 保存当前开发版本。
-- 稳定版本：使用不可变的版本标签，例如 [`v1.2.0`](https://github.com/Greatkingcj/Knowledge-OS/tree/v1.2.0)。
+- 稳定版本：使用不可变的版本标签，例如 [`v1.2.1`](https://github.com/Greatkingcj/Knowledge-OS/tree/v1.2.1)。
 - 安装包：从 [GitHub Releases](https://github.com/Greatkingcj/Knowledge-OS/releases) 下载，不再把 ZIP 提交到 `main`。
 
 ```bash
@@ -86,7 +86,7 @@ Knowledge-OS/
 
 ### 甘特时间线
 
-启用 Gantt Calendar 后，Knowledge OS 左侧主导航会显示与 Dashboard、Projects 平级的 `Gantt / 甘特时间线`。点击入口或执行“AI Knowledge OS: 打开甘特时间线”命令会打开 `Gantt · AI Knowledge OS` 页面：左侧主导航和右侧 AI 助手保持不变，中间内容区挂载 Gantt Calendar 的原生 Gantt 视图。数据仍来自 Vault 中的 Markdown 任务，不需要启动 Web 服务。
+启用 Gantt Calendar 后，Knowledge OS 左侧主导航会显示与 Dashboard、Projects 平级的 `Gantt / 甘特时间线`。点击入口或执行“AI Knowledge OS: 打开甘特时间线”命令会打开 `Gantt · AI Knowledge OS` 页面：左侧主导航和右侧 AI 助手保持不变，中间内容区挂载 Gantt Calendar 的原生视图。日、周、月、年、甘特切换及原生任务操作集中在 Gantt 标题行，不再占用单独一行内容空间。数据仍来自 Vault 中的 Markdown 任务，不需要启动 Web 服务。
 
 如果 Gantt Calendar 未安装或未启用，Knowledge OS 只显示提示，不会创建假数据或降级到外部页面。
 

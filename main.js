@@ -12106,6 +12106,9 @@ var KnowledgeGanttView = class extends KnowledgeDashboardView {
     this.nativeGanttLeaf = null;
     this.nativeGanttReady = null;
     this.nativeGanttHost = null;
+    this.nativeGanttToolbarObserver = null;
+    this.ganttToolbarSlot = null;
+    this.ganttViewMode = "gantt";
     this.refresh = debounce(() => this.render(), 350);
   }
   getViewType() {
@@ -12122,7 +12125,9 @@ var KnowledgeGanttView = class extends KnowledgeDashboardView {
     await this.render();
   }
   async onClose() {
+    this.disconnectNativeGanttToolbarObserver();
     this.nativeGanttHost = null;
+    this.ganttToolbarSlot = null;
     if (this.nativeGanttLeaf) {
       this.nativeGanttLeaf.detach();
       this.nativeGanttLeaf = null;
@@ -12131,6 +12136,7 @@ var KnowledgeGanttView = class extends KnowledgeDashboardView {
     this.contentEl.removeClass("akos-view-content", "akos-gantt-view-content");
   }
   async render() {
+    this.disconnectNativeGanttToolbarObserver();
     const stats = this.getStats();
     const root = this.contentEl;
     root.empty();
@@ -12167,12 +12173,30 @@ var KnowledgeGanttView = class extends KnowledgeDashboardView {
   }
   renderGanttHeader(parent) {
     const header = parent.createDiv({ cls: "akos-gantt-header" });
-    const copy = header.createDiv();
-    copy.createEl("h1", { text: "Gantt" });
-    copy.createEl("p", { text: "\u5728 Knowledge OS \u4E2D\u67E5\u770B\u4E0E\u7EF4\u62A4\u6574\u4E2A Vault \u7684\u4EFB\u52A1\u65F6\u95F4\u7EBF\u3002" });
-    const hint = header.createDiv({ cls: "akos-gantt-date-hint" });
+    const heading = header.createDiv({ cls: "akos-gantt-heading-row" });
+    heading.createEl("h1", { text: "Gantt" });
+    this.renderGanttViewSwitcher(heading);
+    this.ganttToolbarSlot = heading.createDiv({ cls: "akos-gantt-native-actions" });
+    const meta = header.createDiv({ cls: "akos-gantt-header-meta" });
+    meta.createEl("p", { text: "\u5728 Knowledge OS \u4E2D\u67E5\u770B\u4E0E\u7EF4\u62A4\u6574\u4E2A Vault \u7684\u4EFB\u52A1\u65F6\u95F4\u7EBF\u3002" });
+    const hint = meta.createDiv({ cls: "akos-gantt-date-hint" });
     createIcon(hint, "info");
     hint.createSpan({ text: "\u{1F6EB} \u5F00\u59CB\u65E5\u671F \xB7 \u{1F4C5} \u622A\u6B62\u65E5\u671F" });
+  }
+  renderGanttViewSwitcher(parent) {
+    const switcher = parent.createDiv({ cls: "akos-gantt-view-switcher" });
+    [
+      ["day", "\u65E5", "sun"],
+      ["week", "\u5468", "columns-3"],
+      ["month", "\u6708", "calendar-days"],
+      ["year", "\u5E74", "calendar-range"],
+      ["gantt", "\u7518\u7279", "chart-gantt"]
+    ].forEach(([mode, label, icon]) => {
+      const button = createButton(switcher, label, icon, `akos-gantt-view-button${this.ganttViewMode === mode ? " is-active" : ""}`);
+      button.dataset.mode = mode;
+      button.setAttr("aria-pressed", String(this.ganttViewMode === mode));
+      button.addEventListener("click", () => this.switchGanttView(mode));
+    });
   }
   async mountNativeGantt(host) {
     this.nativeGanttHost = host;
@@ -12194,10 +12218,14 @@ var KnowledgeGanttView = class extends KnowledgeDashboardView {
       if (this.nativeGanttHost !== host || !host.isConnected || !this.nativeGanttLeaf) return;
       host.appendChild(this.nativeGanttLeaf.containerEl);
       if (typeof this.nativeGanttLeaf.view?.switchView === "function") {
-        await this.nativeGanttLeaf.view.switchView("gantt");
+        await this.nativeGanttLeaf.view.switchView(this.ganttViewMode);
       }
       host.querySelector(".akos-native-gantt-loading")?.remove();
-      window.requestAnimationFrame(() => this.nativeGanttLeaf?.view?.onResize?.());
+      this.observeNativeGanttToolbar();
+      window.requestAnimationFrame(() => {
+        this.promoteNativeGanttToolbar();
+        this.nativeGanttLeaf?.view?.onResize?.();
+      });
     } catch (error) {
       console.error("AI Knowledge OS: failed to mount Gantt Calendar", error);
       this.renderGanttFallback(host, `\u7518\u7279\u65F6\u95F4\u7EBF\u8F7D\u5165\u5931\u8D25\uFF1A${error instanceof Error ? error.message : String(error)}`);
@@ -12216,7 +12244,50 @@ var KnowledgeGanttView = class extends KnowledgeDashboardView {
     ganttPlugin?.refreshCalendarViews?.();
     this.nativeGanttLeaf?.view?.refresh?.();
     this.nativeGanttLeaf?.view?.onResize?.();
+    window.requestAnimationFrame(() => this.promoteNativeGanttToolbar());
     new Notice("\u7518\u7279\u4EFB\u52A1\u5DF2\u5237\u65B0");
+  }
+  observeNativeGanttToolbar() {
+    this.disconnectNativeGanttToolbarObserver();
+    const content = this.nativeGanttLeaf?.view?.contentEl;
+    if (!content) return;
+    this.nativeGanttToolbarObserver = new MutationObserver(() => {
+      if (content.querySelector(".calendar-toolbar, .gc-toolbar")) {
+        window.requestAnimationFrame(() => this.promoteNativeGanttToolbar());
+      }
+    });
+    this.nativeGanttToolbarObserver.observe(content, { childList: true });
+  }
+  disconnectNativeGanttToolbarObserver() {
+    this.nativeGanttToolbarObserver?.disconnect();
+    this.nativeGanttToolbarObserver = null;
+  }
+  promoteNativeGanttToolbar() {
+    const slot = this.ganttToolbarSlot;
+    const toolbar = this.nativeGanttLeaf?.view?.contentEl?.querySelector(".calendar-toolbar, .gc-toolbar");
+    if (!slot?.isConnected || !toolbar) return;
+    const actions = toolbar.querySelector(".gc-toolbar__right");
+    if (!actions) return;
+    slot.empty();
+    slot.appendChild(actions);
+    toolbar.remove();
+  }
+  async switchGanttView(mode) {
+    if (!(/* @__PURE__ */ new Set(["day", "week", "month", "year", "gantt"])).has(mode)) return;
+    this.ganttViewMode = mode;
+    this.contentEl.querySelectorAll(".akos-gantt-view-button").forEach((button) => {
+      const active = button.dataset.mode === mode;
+      button.classList.toggle("is-active", active);
+      button.setAttr("aria-pressed", String(active));
+    });
+    if (typeof this.nativeGanttLeaf?.view?.switchView === "function") {
+      this.ganttToolbarSlot?.empty();
+      await this.nativeGanttLeaf.view.switchView(mode);
+      window.requestAnimationFrame(() => {
+        this.promoteNativeGanttToolbar();
+        this.nativeGanttLeaf?.view?.onResize?.();
+      });
+    }
   }
 };
 var AgentCenterView = class extends KnowledgeDashboardView {

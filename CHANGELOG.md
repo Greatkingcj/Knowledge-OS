@@ -2,6 +2,18 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [1.2.1] - 2026-08-13
+
+### Changed
+
+- 将日、周、月、年与甘特视图切换放到 Knowledge OS 的 Gantt 标题旁。
+- 将 Gantt Calendar 的原生导航、筛选、标签、新增、设置、同步和撤销操作提升到同一标题行，移除内容区内重复工具栏以扩大时间线空间。
+- 嵌入式 Gantt Calendar 使用与 Dashboard、Projects 和 Analytics 一致的深色变量与组件外观。
+
+### Fixed
+
+- 修复年视图中 12 个月超出内容区后无法纵向滚动的问题。
+
 ## [1.2.0] - 2026-08-13
 
 ### Added
@@ -39,5 +51,6 @@
 - 本地全文检索、网页采集、项目管理和知识分析基础能力。
 
 [1.2.0]: https://github.com/Greatkingcj/Knowledge-OS/compare/v1.1.0...v1.2.0
+[1.2.1]: https://github.com/Greatkingcj/Knowledge-OS/compare/v1.2.0...v1.2.1
 [1.1.0]: https://github.com/SnowMontain/Knowledge-OS/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/SnowMontain/Knowledge-OS/releases/tag/v1.0.0

@@ -4472,10 +4472,10 @@
 
 .akos-gantt-header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
+  align-items: stretch;
+  gap: 5px;
   margin-bottom: 12px;
+  flex-direction: column;
   flex: 0 0 auto;
 }
 
@@ -4487,8 +4487,23 @@
   letter-spacing: -.3px;
 }
 
+.akos-gantt-heading-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.akos-gantt-header-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
 .akos-gantt-header p {
-  margin: 5px 0 0;
+  margin: 0;
   color: #7c859e;
   font-size: 9px;
 }
@@ -4502,12 +4517,83 @@
   font-size: var(--akos-type-meta);
 }
 
+.akos-gantt-view-switcher {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  margin: 0;
+  padding: 3px;
+  border: 1px solid rgba(114, 126, 164, .14);
+  border-radius: 8px;
+  background: rgba(12, 17, 29, .78);
+}
+
+.akos-view-content button.akos-gantt-view-button {
+  min-width: 42px;
+  height: 28px;
+  padding: 0 8px;
+  color: #8791a8 !important;
+  border: 1px solid transparent !important;
+  border-radius: 6px;
+  background: transparent !important;
+}
+
+.akos-gantt-view-button .akos-icon,
+.akos-gantt-view-button svg {
+  width: 13px;
+  height: 13px;
+}
+
+.akos-view-content button.akos-gantt-view-button:hover {
+  color: #c9c2ff !important;
+  background: rgba(111, 87, 216, .12) !important;
+}
+
+.akos-view-content button.akos-gantt-view-button.is-active {
+  color: #f1edff !important;
+  border-color: rgba(151, 128, 255, .30) !important;
+  background: linear-gradient(145deg, rgba(126, 97, 255, .88), rgba(91, 69, 201, .88)) !important;
+}
+
 .akos-gantt-date-hint {
   min-height: 30px;
   padding: 0 10px;
   border: 1px solid rgba(114, 126, 164, .14);
   border-radius: 7px;
   background: rgba(14, 19, 30, .72);
+}
+
+.akos-gantt-native-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 0;
+  margin-left: auto;
+}
+
+.akos-gantt-native-actions .gc-toolbar__right {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  min-width: 0;
+}
+
+.akos-gantt-native-actions .gc-toolbar__right > div {
+  display: flex;
+  align-items: center;
+}
+
+.akos-gantt-native-actions .gc-toolbar__btn {
+  color: #aeb6ca;
+  border-color: rgba(114, 126, 164, .14);
+  background: rgba(18, 24, 39, .88);
+}
+
+.akos-gantt-native-actions .gc-toolbar__btn:hover {
+  color: #d9d2ff;
+  background: rgba(111, 87, 216, .16);
 }
 
 .akos-gantt-panel,
@@ -4521,6 +4607,19 @@
 }
 
 .akos-native-gantt-host {
+  --background-primary: #0b101b;
+  --background-primary-alt: #0e1422;
+  --background-secondary: #111829;
+  --background-secondary-alt: #151d30;
+  --background-modifier-border: rgba(114, 126, 164, .18);
+  --background-modifier-hover: rgba(111, 87, 216, .14);
+  --background-modifier-active-hover: rgba(126, 97, 255, .22);
+  --text-normal: #dce1f0;
+  --text-muted: #8d97ad;
+  --text-faint: #626d84;
+  --text-on-accent: #ffffff;
+  --interactive-accent: #7964ed;
+  --interactive-accent-hover: #8b77ff;
   height: 100%;
   background: #080c15;
 }
@@ -4572,6 +4671,82 @@
 
 .akos-native-gantt-host .view-content {
   padding: 0 !important;
+}
+
+/* The Knowledge OS heading owns view switching and promotes native actions out of this toolbar. */
+.akos-native-gantt-host .calendar-toolbar,
+.akos-native-gantt-host .gc-toolbar,
+.akos-native-gantt-host .gc-toolbar__left {
+  display: none !important;
+}
+
+.akos-native-gantt-host .calendar-content,
+.akos-native-gantt-host .gc-view,
+.akos-native-gantt-host .gc-year-view__month-card {
+  color: #cbd2e2;
+  background-color: #0b101b;
+}
+
+.akos-native-gantt-host .gc-year-view__month-card,
+.akos-native-gantt-host .gc-task-card,
+.akos-native-gantt-host [class*="gc-gantt-view__task"] {
+  border-color: rgba(114, 126, 164, .16);
+}
+
+.akos-native-gantt-host .gc-toolbar__title-display,
+.akos-native-gantt-host .gc-year-view__month-header h3 {
+  color: #dce1f0;
+}
+
+.akos-native-gantt-host .gc-gantt-view__bar,
+.akos-native-gantt-host [class*="gc-gantt-view__bar"] {
+  background-color: #7964ed;
+}
+
+/* Gantt Calendar sets year mode to visible overflow; restore a bounded scroll chain in the embed. */
+.akos-native-gantt-host .view-content:has(.gc-view--year),
+.akos-native-gantt-host .calendar-content:has(.gc-view--year) {
+  min-height: 0 !important;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
+
+.akos-native-gantt-host .gc-view.gc-view--year {
+  height: auto !important;
+  min-height: max-content !important;
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+}
+
+.akos-native-gantt-host .gc-view--year .gc-year-view__months {
+  padding: 10px;
+}
+
+@media (max-width: 1180px) {
+  .akos-gantt-view-switcher {
+    gap: 1px;
+  }
+
+  .akos-view-content button.akos-gantt-view-button {
+    min-width: 32px;
+    padding: 0 6px;
+  }
+
+  .akos-gantt-view-button > span:not(.akos-icon) {
+    display: none;
+  }
+
+  .akos-gantt-heading-row {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .akos-gantt-native-actions {
+    width: 100%;
+    margin-left: 0;
+    justify-content: flex-start;
+  }
 }
 
 .akos-project-scroll {
