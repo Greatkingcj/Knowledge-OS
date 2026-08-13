@@ -2,6 +2,14 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [1.3.2] - 2026-08-14
+
+### Fixed
+
+- 修复 macOS 浅色 Obsidian 主题下窗口控制按钮背后的白色标题栏区域。
+- 移除激活页签两侧由浅色主题伪元素产生的白色圆角阴影。
+- 修复右上角侧栏切换按钮容器仍使用浅色背景的问题。
+
 ## [1.3.1] - 2026-08-14
 
 ### Fixed
@@ -80,6 +88,7 @@
 - Dashboard、Inbox、Knowledge、Graph、Projects、AI Agents 与 Analytics 页面。
 - 本地全文检索、网页采集、项目管理和知识分析基础能力。
 
+[1.3.2]: https://github.com/Greatkingcj/Knowledge-OS/compare/v1.3.1...v1.3.2
 [1.3.1]: https://github.com/Greatkingcj/Knowledge-OS/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/Greatkingcj/Knowledge-OS/compare/v1.2.2...v1.3.0
 [1.2.2]: https://github.com/Greatkingcj/Knowledge-OS/compare/v1.2.1...v1.2.2

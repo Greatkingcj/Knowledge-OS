@@ -3215,6 +3215,13 @@ body.akos-shell-theme :is(.titlebar, .workspace-tab-header-container, .workspace
   background: #080b12;
 }
 
+/* Obsidian's light macOS frame paints the traffic-light backing with the
+   collapsed ribbon pseudo-element. Keep that native drag region dark. */
+body.akos-shell-theme .workspace-ribbon::before {
+  border-color: rgba(132, 145, 190, .14) !important;
+  background: #080b12 !important;
+}
+
 body.akos-shell-theme .titlebar {
   --titlebar-background: #080b12;
   --titlebar-background-focused: #080b12;
@@ -3243,11 +3250,18 @@ body.akos-shell-theme .workspace-tab-header:hover {
 }
 
 body.akos-shell-theme .workspace-tab-header.is-active {
-  color: #eef1ff;
-  border-color: rgba(139, 124, 255, .20);
-  border-bottom-color: transparent;
-  background: linear-gradient(180deg, rgba(37, 38, 68, .96), rgba(16, 21, 34, .96));
-  box-shadow: inset 0 2px #7565ff, 0 -8px 24px rgba(94, 72, 220, .10);
+  color: #eef1ff !important;
+  border-color: rgba(139, 124, 255, .20) !important;
+  border-bottom-color: transparent !important;
+  background: linear-gradient(180deg, rgba(37, 38, 68, .96), rgba(16, 21, 34, .96)) !important;
+  box-shadow: inset 0 2px #7565ff, 0 -8px 24px rgba(94, 72, 220, .10) !important;
+}
+
+/* Light theme uses white clipped shadows to form curved active-tab corners. */
+body.akos-shell-theme .workspace-split.mod-root .workspace-tab-header.is-active::before,
+body.akos-shell-theme .workspace-split.mod-root .workspace-tab-header.is-active::after {
+  display: none !important;
+  box-shadow: none !important;
 }
 
 body.akos-shell-theme .workspace-tab-header.is-active .workspace-tab-header-inner-icon,
@@ -3274,6 +3288,12 @@ body.akos-shell-theme :is(.titlebar, .workspace-tab-header-container, .workspace
 
 body.akos-shell-theme :is(.workspace-tab-header-new-tab, .workspace-tab-header-tab-list, .workspace-tab-header-status-container, .clickable-icon) {
   color: #8892aa;
+}
+
+body.akos-shell-theme :is(.sidebar-toggle-button.mod-left, .sidebar-toggle-button.mod-right) {
+  color: #9aa4bc !important;
+  border-color: rgba(132, 145, 190, .14) !important;
+  background: #080b12 !important;
 }
 
 body.akos-shell-theme :is(.workspace-tab-header-new-tab, .workspace-tab-header-tab-list, .workspace-tab-header-status-container, .titlebar-button, .clickable-icon):hover {
