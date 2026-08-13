@@ -3287,6 +3287,25 @@ body.akos-shell-theme :is(.workspace-ribbon, .workspace-split.mod-left-split, .w
   background: #090d16;
 }
 
+body.akos-shell-theme :is(.workspace-split.mod-left-split, .workspace-split.mod-right-split) .view-header {
+  --background-primary: #0b101a;
+  --text-normal: #e5e8f6;
+  --text-muted: #969fb7;
+  color: #aab3ca;
+  border-color: rgba(132, 145, 190, .12);
+  background: #0b101a !important;
+}
+
+body.akos-shell-theme :is(.workspace-split.mod-left-split, .workspace-split.mod-right-split) :is(.view-header-title, .view-header-title-parent, .view-header-breadcrumb) {
+  color: #cbd2e3 !important;
+  font-weight: 600;
+}
+
+body.akos-shell-theme :is(.workspace-split.mod-left-split, .workspace-split.mod-right-split) .view-header svg {
+  color: #9ca6bf !important;
+  stroke: currentColor !important;
+}
+
 body.akos-shell-theme :is(.workspace-ribbon.mod-left, .workspace-ribbon.mod-right) {
   box-shadow: inset -1px 0 rgba(132, 145, 190, .08);
 }
@@ -3299,6 +3318,71 @@ body.akos-shell-theme :is(.workspace-split.mod-left-split, .workspace-split.mod-
 body.akos-shell-theme :is(.workspace-split.mod-left-split, .workspace-split.mod-right-split) :is(.workspace-leaf-content, .nav-files-container, .nav-header) {
   color: #aab3ca;
   background: #0b101a;
+}
+
+body.akos-shell-theme .workspace-split.mod-right-split .workspace-leaf-content[data-type="gantt-calendar-sidebar-view"] {
+  --background-primary: #0b101a;
+  --background-primary-alt: #0e1422;
+  --background-secondary: #111829;
+  --background-secondary-alt: #151d30;
+  --background-modifier-border: rgba(132, 145, 190, .16);
+  --background-modifier-hover: rgba(111, 87, 216, .15);
+  --text-normal: #dce1f0;
+  --text-muted: #929cb4;
+  --text-faint: #6f7a92;
+  color: #dce1f0;
+  background: #0b101a;
+}
+
+body.akos-shell-theme .workspace-split.mod-right-split .workspace-leaf-content[data-type="gantt-calendar-sidebar-view"] :is(.gc-sidebar, .gc-sidebar__content, .gc-sidebar__timeline) {
+  color: #cbd2e3;
+  background: #0b101a !important;
+}
+
+body.akos-shell-theme .workspace-split.mod-right-split .workspace-leaf-content[data-type="gantt-calendar-sidebar-view"] :is(.gc-sidebar__tab-bar, .gc-sidebar__timeline-header) {
+  color: #aeb7cc;
+  border-color: rgba(132, 145, 190, .14) !important;
+  background: #0e1422 !important;
+}
+
+body.akos-shell-theme .workspace-split.mod-right-split .workspace-leaf-content[data-type="gantt-calendar-sidebar-view"] .gc-sidebar__tab-btn {
+  color: #8f99b2 !important;
+  border-color: transparent !important;
+  background: transparent !important;
+}
+
+body.akos-shell-theme .workspace-split.mod-right-split .workspace-leaf-content[data-type="gantt-calendar-sidebar-view"] .gc-sidebar__tab-btn:hover {
+  color: #e2e5f4 !important;
+  background: rgba(53, 62, 91, .58) !important;
+}
+
+body.akos-shell-theme .workspace-split.mod-right-split .workspace-leaf-content[data-type="gantt-calendar-sidebar-view"] .gc-sidebar__tab-btn--active {
+  color: #d6ceff !important;
+  border-color: rgba(139, 124, 255, .24) !important;
+  background: rgba(102, 82, 205, .26) !important;
+}
+
+body.akos-shell-theme .workspace-split.mod-right-split .workspace-leaf-content[data-type="gantt-calendar-sidebar-view"] .gc-sidebar__timeline-allday {
+  color: #aeb7cc;
+  border-color: rgba(132, 145, 190, .14) !important;
+  background: #0e1422 !important;
+}
+
+body.akos-shell-theme .workspace-split.mod-right-split .workspace-leaf-content[data-type="gantt-calendar-sidebar-view"] .gc-task-card {
+  --task-bg-color: #151d30 !important;
+  --task-text-color: #e4e8f5 !important;
+  color: #e4e8f5 !important;
+  border-color: rgba(132, 145, 190, .18) !important;
+  background: #151d30 !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .18);
+}
+
+body.akos-shell-theme .workspace-split.mod-right-split .workspace-leaf-content[data-type="gantt-calendar-sidebar-view"] :is(.gc-task-card__text, .gc-sidebar__timeline-time-label, .gc-sidebar__timeline-allday-label) {
+  color: inherit !important;
+}
+
+body.akos-shell-theme .workspace-split.mod-right-split .workspace-leaf-content[data-type="gantt-calendar-sidebar-view"] :is(.gc-sidebar__timeline-time-slot, .gc-sidebar__timeline-slot-create) {
+  border-color: rgba(132, 145, 190, .11) !important;
 }
 
 body.akos-shell-theme :is(.workspace-split.mod-left-split, .workspace-split.mod-right-split) :is(.nav-file-title, .nav-folder-title, .tree-item-self, .search-result-file-title) {

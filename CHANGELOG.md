@@ -2,6 +2,14 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [1.3.1] - 2026-08-14
+
+### Fixed
+
+- 外壳主题会同步到 Obsidian 新开的弹出窗口，并在窗口、布局或 CSS 变化后保持启用；关闭设置或卸载插件时会从所有已知窗口完整移除。
+- 修复左右侧栏原生标题栏的浅色背景，以及 Gantt Calendar 右侧栏的白色选中项、全天区域和任务卡。
+- 提升侧栏标题、中文字体与原生导航图标在深色外壳下的清晰度和一致性。
+
 ## [1.3.0] - 2026-08-13
 
 ### Added
@@ -72,6 +80,7 @@
 - Dashboard、Inbox、Knowledge、Graph、Projects、AI Agents 与 Analytics 页面。
 - 本地全文检索、网页采集、项目管理和知识分析基础能力。
 
+[1.3.1]: https://github.com/Greatkingcj/Knowledge-OS/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/Greatkingcj/Knowledge-OS/compare/v1.2.2...v1.3.0
 [1.2.2]: https://github.com/Greatkingcj/Knowledge-OS/compare/v1.2.1...v1.2.2
 [1.2.0]: https://github.com/Greatkingcj/Knowledge-OS/compare/v1.1.0...v1.2.0

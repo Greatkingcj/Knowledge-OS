@@ -5052,11 +5052,26 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
     this.navigationSerialByLeaf = new WeakMap();
     this.navigationQueueByLeaf = new WeakMap();
     this.routeStateByLeaf = new WeakMap();
+    this.shellThemeDocuments = new Set();
     this.router = new KnowledgeOSRouter(this);
     this.agentTaskStore = new AgentTaskStore(this);
     this.claudianAdapter = new ClaudianAdapter(this);
     this.lastFile = this.app.workspace.getActiveFile();
     this.applyShellTheme();
+    this.registerEvent(this.app.workspace.on("window-open", (workspaceWindow, hostWindow) => {
+      this.applyShellThemeToDocument(hostWindow?.document || workspaceWindow?.win?.document);
+      window.setTimeout(() => {
+        if (!this.isUnloading) this.applyShellTheme();
+      }, 0);
+    }));
+    this.registerEvent(this.app.workspace.on("window-close", (workspaceWindow, hostWindow) => {
+      const closedDocument = hostWindow?.document || workspaceWindow?.win?.document;
+      if (!closedDocument) return;
+      closedDocument.body?.classList.remove(SHELL_THEME_CLASS);
+      this.shellThemeDocuments.delete(closedDocument);
+    }));
+    this.registerEvent(this.app.workspace.on("layout-change", () => this.applyShellTheme()));
+    this.registerEvent(this.app.workspace.on("css-change", () => this.applyShellTheme()));
     this.registerView(VIEW_TYPE, (leaf) => new KnowledgeDashboardView(leaf, this));
     this.registerView(INBOX_VIEW_TYPE, (leaf) => new InboxView(leaf, this));
     this.registerView(KNOWLEDGE_VIEW_TYPE, (leaf) => new KnowledgeCenterView(leaf, this));
@@ -5200,11 +5215,35 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
   }
 
   applyShellTheme() {
-    document.body.classList.toggle(SHELL_THEME_CLASS, Boolean(this.settings.syncObsidianShellTheme));
+    const documents = this.getShellThemeDocuments();
+    for (const knownDocument of this.shellThemeDocuments) documents.add(knownDocument);
+    for (const hostDocument of documents) this.applyShellThemeToDocument(hostDocument);
   }
 
   removeShellTheme() {
-    document.body.classList.remove(SHELL_THEME_CLASS);
+    const documents = this.getShellThemeDocuments();
+    for (const knownDocument of this.shellThemeDocuments) documents.add(knownDocument);
+    for (const hostDocument of documents) hostDocument.body?.classList.remove(SHELL_THEME_CLASS);
+    this.shellThemeDocuments.clear();
+  }
+
+  getShellThemeDocuments() {
+    const documents = new Set();
+    const addDocument = (hostDocument) => {
+      if (hostDocument?.body) documents.add(hostDocument);
+    };
+    addDocument(document);
+    addDocument(this.app.workspace.containerEl?.ownerDocument);
+    this.app.workspace.iterateAllLeaves((leaf) => addDocument(leaf.containerEl?.ownerDocument));
+    return documents;
+  }
+
+  applyShellThemeToDocument(hostDocument) {
+    if (!hostDocument?.body) return;
+    const enabled = Boolean(this.settings.syncObsidianShellTheme);
+    hostDocument.body.classList.toggle(SHELL_THEME_CLASS, enabled);
+    if (enabled) this.shellThemeDocuments.add(hostDocument);
+    else this.shellThemeDocuments.delete(hostDocument);
   }
 
   getKnowledgeLeaves() {
