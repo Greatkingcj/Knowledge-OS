@@ -2,6 +2,22 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/lang/zh-CN/)。
 
+## [1.3.0] - 2026-08-13
+
+### Added
+
+- Knowledge OS 八个模块统一为网页式单页签路由，普通点击复用当前页签，Cmd/Ctrl+点击及中键显式新开页签。
+- 全部 Knowledge OS View 接入 Obsidian 公开的页签历史状态，可通过返回／前进恢复模块筛选与上下文。
+- 新增可即时开关的 Obsidian 外壳主题同步，统一标题栏、页签、侧栏、状态栏、菜单、提示与弹窗。
+- 首次升级自动合并旧版本遗留的 Knowledge OS 页签，之后保留用户主动创建的多个工作台页签。
+
+### Changed
+
+- 笔记、Canvas、Base 与完整原生 Graph 默认在当前页签打开，保留原生返回路径。
+- Gantt 切出时完整销毁嵌入视图，切回后恢复视图模式和当前日期。
+- 修正浅色 Obsidian 主题下设置页、命令面板快捷键、页签图标与中文字体的对比度和继承色。
+- 页签标题改为当前模块短名称，避免窄窗口中被截断。
+
 ## [1.2.2] - 2026-08-13
 
 ### Fixed
@@ -56,6 +72,7 @@
 - Dashboard、Inbox、Knowledge、Graph、Projects、AI Agents 与 Analytics 页面。
 - 本地全文检索、网页采集、项目管理和知识分析基础能力。
 
+[1.3.0]: https://github.com/Greatkingcj/Knowledge-OS/compare/v1.2.2...v1.3.0
 [1.2.2]: https://github.com/Greatkingcj/Knowledge-OS/compare/v1.2.1...v1.2.2
 [1.2.0]: https://github.com/Greatkingcj/Knowledge-OS/compare/v1.1.0...v1.2.0
 [1.2.1]: https://github.com/Greatkingcj/Knowledge-OS/compare/v1.2.0...v1.2.1

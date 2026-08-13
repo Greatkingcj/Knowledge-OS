@@ -19,18 +19,16 @@
   --akos-shadow: 0 22px 70px rgba(0, 0, 0, 0.32);
 }
 
-.workspace-leaf-content[data-type="ai-knowledge-os-dashboard"] .view-header {
-  display: none;
+.akos-view-content {
+  --akos-font-ui: "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
 }
 
-.workspace-leaf-content[data-type="ai-knowledge-os-inbox"] .view-header {
-  display: none;
-}
-
-.workspace-leaf-content[data-type="ai-knowledge-os-projects"] .view-header {
-  display: none;
-}
-
+.workspace-leaf-content[data-type="ai-knowledge-os-dashboard"] .view-header,
+.workspace-leaf-content[data-type="ai-knowledge-os-inbox"] .view-header,
+.workspace-leaf-content[data-type="ai-knowledge-os-knowledge"] .view-header,
+.workspace-leaf-content[data-type="ai-knowledge-os-graph"] .view-header,
+.workspace-leaf-content[data-type="ai-knowledge-os-projects"] .view-header,
+.workspace-leaf-content[data-type="ai-knowledge-os-gantt"] .view-header,
 .workspace-leaf-content[data-type="ai-knowledge-os-agents"] .view-header,
 .workspace-leaf-content[data-type="ai-knowledge-os-analytics"] .view-header {
   display: none;
@@ -50,7 +48,7 @@
 .akos-view-content button,
 .akos-view-content input,
 .akos-view-content textarea {
-  font-family: inherit;
+  font-family: var(--akos-font-ui);
 }
 
 .akos-view-content button {
@@ -117,8 +115,14 @@
     radial-gradient(circle at 72% 15%, rgba(73, 81, 179, 0.09), transparent 30%),
     radial-gradient(circle at 38% 100%, rgba(73, 215, 231, 0.035), transparent 30%),
     linear-gradient(145deg, #090c13 0%, #080b12 48%, #0a0e17 100%);
-  font-family: Inter, "HarmonyOS Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: var(--akos-font-ui);
   transition: grid-template-columns .25s ease;
+}
+
+.akos-view-content .akos-icon,
+.akos-view-content .akos-icon svg {
+  color: currentColor;
+  stroke: currentColor;
 }
 
 .akos-sidebar {
@@ -3192,6 +3196,281 @@
   .akos-inbox-category-legend {
     width: 100%;
   }
+}
+
+/* Obsidian shell synchronization. Every selector is rooted at the plugin class so
+   disabling the setting or unloading the plugin restores the native shell. */
+body.akos-shell-theme,
+body.akos-shell-theme :is(.app-container, .horizontal-main-container, .workspace, .workspace-split.mod-root, .workspace-leaf) {
+  background: #080b12;
+}
+
+body.akos-shell-theme :is(.titlebar, .workspace-tab-header-container, .workspace-ribbon, .workspace-split.mod-left-split, .workspace-split.mod-right-split, .status-bar, .menu, .suggestion-container, .popover, .hover-popover, .tooltip, .notice, .modal, .prompt) {
+  font-family: "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", "Helvetica Neue", sans-serif;
+}
+
+body.akos-shell-theme :is(.titlebar, .workspace-tab-header-container, .workspace-ribbon, .status-bar) {
+  color: #aab3ca;
+  border-color: rgba(132, 145, 190, .14);
+  background: #080b12;
+}
+
+body.akos-shell-theme .titlebar {
+  --titlebar-background: #080b12;
+  --titlebar-background-focused: #080b12;
+  color: #c8cee0;
+  box-shadow: inset 0 -1px rgba(132, 145, 190, .12);
+}
+
+body.akos-shell-theme :is(.titlebar-text, .titlebar-button) {
+  color: #b8c0d5;
+}
+
+body.akos-shell-theme :is(.workspace-tab-header-container, .workspace-tab-header-tab-list, .workspace-tab-header-spacer) {
+  background: #090d16;
+}
+
+body.akos-shell-theme .workspace-tab-header {
+  color: #77819a;
+  border: 1px solid transparent;
+  border-radius: 8px 8px 0 0;
+  background: transparent;
+}
+
+body.akos-shell-theme .workspace-tab-header:hover {
+  color: #c8cee0;
+  background: rgba(24, 31, 49, .72);
+}
+
+body.akos-shell-theme .workspace-tab-header.is-active {
+  color: #eef1ff;
+  border-color: rgba(139, 124, 255, .20);
+  border-bottom-color: transparent;
+  background: linear-gradient(180deg, rgba(37, 38, 68, .96), rgba(16, 21, 34, .96));
+  box-shadow: inset 0 2px #7565ff, 0 -8px 24px rgba(94, 72, 220, .10);
+}
+
+body.akos-shell-theme .workspace-tab-header.is-active .workspace-tab-header-inner-icon,
+body.akos-shell-theme .workspace-tab-header.is-active .workspace-tab-header-inner-title {
+  color: #e9eaff !important;
+}
+
+body.akos-shell-theme .workspace-tab-header-inner {
+  color: inherit !important;
+}
+
+body.akos-shell-theme .workspace-tab-header:not(.is-active) :is(.workspace-tab-header-inner-icon, .workspace-tab-header-inner-title) {
+  color: #8f99b2 !important;
+}
+
+body.akos-shell-theme .workspace-tab-header :is(.workspace-tab-header-inner-icon, .workspace-tab-header-inner-close-button) {
+  color: inherit !important;
+}
+
+body.akos-shell-theme :is(.titlebar, .workspace-tab-header-container, .workspace-ribbon, .workspace-split.mod-left-split, .workspace-split.mod-right-split, .status-bar, .menu, .suggestion-container, .modal, .prompt) svg {
+  color: currentColor !important;
+  stroke: currentColor !important;
+}
+
+body.akos-shell-theme :is(.workspace-tab-header-new-tab, .workspace-tab-header-tab-list, .workspace-tab-header-status-container, .clickable-icon) {
+  color: #8892aa;
+}
+
+body.akos-shell-theme :is(.workspace-tab-header-new-tab, .workspace-tab-header-tab-list, .workspace-tab-header-status-container, .titlebar-button, .clickable-icon):hover {
+  color: #e3e6f4;
+  background: rgba(35, 42, 63, .78);
+}
+
+body.akos-shell-theme :is(.workspace-ribbon, .workspace-split.mod-left-split, .workspace-split.mod-right-split) {
+  color: #929bb2;
+  border-color: rgba(132, 145, 190, .12);
+  background: #090d16;
+}
+
+body.akos-shell-theme :is(.workspace-ribbon.mod-left, .workspace-ribbon.mod-right) {
+  box-shadow: inset -1px 0 rgba(132, 145, 190, .08);
+}
+
+body.akos-shell-theme :is(.workspace-split.mod-left-split, .workspace-split.mod-right-split) .workspace-leaf-resize-handle {
+  border-color: rgba(139, 124, 255, .18);
+  background: rgba(139, 124, 255, .08);
+}
+
+body.akos-shell-theme :is(.workspace-split.mod-left-split, .workspace-split.mod-right-split) :is(.workspace-leaf-content, .nav-files-container, .nav-header) {
+  color: #aab3ca;
+  background: #0b101a;
+}
+
+body.akos-shell-theme :is(.workspace-split.mod-left-split, .workspace-split.mod-right-split) :is(.nav-file-title, .nav-folder-title, .tree-item-self, .search-result-file-title) {
+  color: #9da6bd;
+  border-radius: 7px;
+}
+
+body.akos-shell-theme :is(.workspace-split.mod-left-split, .workspace-split.mod-right-split) :is(.nav-file-title, .nav-folder-title, .tree-item-self, .search-result-file-title):hover {
+  color: #edf0ff;
+  background: rgba(35, 42, 63, .68);
+}
+
+body.akos-shell-theme :is(.workspace-split.mod-left-split, .workspace-split.mod-right-split) :is(.is-active, .is-selected) > :is(.nav-file-title-content, .nav-folder-title-content),
+body.akos-shell-theme :is(.workspace-split.mod-left-split, .workspace-split.mod-right-split) :is(.nav-file-title.is-active, .tree-item-self.is-active) {
+  color: #f0efff;
+  background: rgba(102, 82, 205, .24);
+}
+
+body.akos-shell-theme .status-bar {
+  color: #78829b;
+  border-top: 1px solid rgba(132, 145, 190, .12);
+  background: rgba(8, 12, 20, .98);
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, .16);
+}
+
+body.akos-shell-theme :is(.menu, .suggestion-container, .popover, .hover-popover, .tooltip, .notice, .modal, .prompt) {
+  --color-base-00: #101625;
+  --color-base-10: #0b101b;
+  --color-base-20: #182034;
+  --background-primary: #101625;
+  --background-secondary: #0b101b;
+  --background-modifier-hover: rgba(53, 62, 91, .72);
+  --background-modifier-active-hover: rgba(105, 84, 214, .30);
+  --background-modifier-border: rgba(132, 145, 190, .18);
+  --text-normal: #e5e8f6;
+  --text-muted: #969fb7;
+  --text-accent: #9e8cff;
+  color: #d9deef;
+  border-color: rgba(132, 145, 190, .18);
+  background: #101625;
+  box-shadow: 0 22px 70px rgba(0, 0, 0, .48);
+}
+
+body.akos-shell-theme .modal.mod-settings {
+  --interactive-normal: #182034;
+  --interactive-hover: #222b42;
+  --text-normal: #e5e8f6;
+  --text-muted: #a2abc1;
+  --text-faint: #78829b;
+  color: #d9deef;
+  background: #101625 !important;
+}
+
+body.akos-shell-theme .modal.mod-settings :is(.vertical-tabs-container, .vertical-tab-content) {
+  color: #d9deef;
+  background: #101625 !important;
+}
+
+body.akos-shell-theme .modal.mod-settings .vertical-tab-header {
+  color: #aeb7cc;
+  border-right: 1px solid rgba(132, 145, 190, .16);
+  background: #0b101b !important;
+}
+
+body.akos-shell-theme .modal.mod-settings :is(.vertical-tab-header-group-title, .setting-item-heading, .setting-item-name, h1, h2, h3, h4) {
+  color: #eef1ff !important;
+}
+
+body.akos-shell-theme .modal.mod-settings :is(.setting-item-description, .setting-item-info, .vertical-tab-nav-item) {
+  color: #a2abc1 !important;
+}
+
+body.akos-shell-theme .modal.mod-settings .vertical-tab-nav-item:hover {
+  color: #f0f1ff !important;
+  background: rgba(53, 62, 91, .66);
+}
+
+body.akos-shell-theme .modal.mod-settings .vertical-tab-nav-item.is-active {
+  color: #f4f2ff !important;
+  background: rgba(102, 82, 205, .34);
+}
+
+body.akos-shell-theme .modal.mod-settings .setting-item {
+  border-color: rgba(132, 145, 190, .14);
+}
+
+body.akos-shell-theme .modal.mod-settings :is(.setting-group, .setting-items) {
+  color: #d9deef;
+  border-color: rgba(132, 145, 190, .14);
+  background: #121827 !important;
+}
+
+body.akos-shell-theme .modal.mod-settings :is(.setting-group, .setting-items) a {
+  color: #9e91ff;
+}
+
+body.akos-shell-theme .modal.mod-settings :is(.setting-group, .setting-items) a:visited {
+  color: #b7aaff;
+}
+
+body.akos-shell-theme :is(.menu-item, .suggestion-item) {
+  color: #c2c9dc;
+  border-radius: 7px;
+}
+
+body.akos-shell-theme :is(.menu-item, .suggestion-item):hover,
+body.akos-shell-theme :is(.menu-item, .suggestion-item).is-selected {
+  color: #f4f2ff;
+  background: rgba(102, 82, 205, .26);
+}
+
+body.akos-shell-theme :is(.menu, .suggestion-container, .prompt) :is(kbd, .suggestion-hotkey) {
+  color: #b8c0d5;
+  border: 1px solid rgba(132, 145, 190, .22);
+  background: #182034 !important;
+  box-shadow: none;
+}
+
+body.akos-shell-theme :is(.modal-container, .modal, .prompt, .suggestion-container) :is(input, textarea, select, .dropdown) {
+  color: #e5e8f6;
+  border-color: rgba(132, 145, 190, .28) !important;
+  background: #0b101b !important;
+}
+
+body.akos-shell-theme :is(.modal-container, .modal, .prompt, .suggestion-container) :is(input, textarea, select, .dropdown):focus {
+  border-color: rgba(139, 118, 255, .72);
+  box-shadow: 0 0 0 2px rgba(117, 101, 255, .22);
+}
+
+body.akos-shell-theme :is(.modal-container, .modal, .prompt) button:not(.clickable-icon) {
+  color: #d8dcef;
+  border: 1px solid rgba(132, 145, 190, .24) !important;
+  background: #182034 !important;
+}
+
+body.akos-shell-theme :is(.modal-container, .modal, .prompt) button.mod-cta {
+  color: #fff;
+  border-color: rgba(155, 137, 255, .48);
+  background: linear-gradient(145deg, #806aff, #624ae0) !important;
+}
+
+body.akos-shell-theme :is(.modal-container, .modal, .prompt) button:disabled {
+  color: #737d96 !important;
+  border-color: rgba(132, 145, 190, .10) !important;
+  background: #141a29 !important;
+  opacity: .72;
+}
+
+body.akos-shell-theme .modal.mod-settings .checkbox-container:not(.is-enabled) {
+  background: #333b51 !important;
+}
+
+body.akos-shell-theme :is(.checkbox-container, .mod-toggle) {
+  --interactive-accent: #7565ff;
+  --interactive-accent-hover: #8d7dff;
+}
+
+body.akos-shell-theme :is(button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid rgba(153, 135, 255, .88);
+  outline-offset: 2px;
+}
+
+body.akos-shell-theme :is(.workspace, .workspace-split, .menu, .suggestion-container, .modal, .prompt, .popover) ::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: rgba(116, 126, 158, .42);
+  background-clip: padding-box;
+}
+
+body.akos-shell-theme :is(.workspace, .workspace-split, .menu, .suggestion-container, .modal, .prompt, .popover) ::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 124, 255, .58);
+  background-clip: padding-box;
 }
 
 @media (max-width: 930px) {

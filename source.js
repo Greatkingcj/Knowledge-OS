@@ -25,6 +25,20 @@ const GANTT_PLUGIN_ID = "gantt-calendar";
 const GANTT_NATIVE_VIEW_TYPE = "gantt-calendar-view";
 const CLAUDIAN_VIEW_TYPE = "claudian-view";
 const ROOT = "AI Knowledge OS";
+const SHELL_THEME_CLASS = "akos-shell-theme";
+const SINGLE_LEAF_MIGRATION = "1.3.0";
+
+const KNOWLEDGE_OS_ROUTES = Object.freeze({
+  dashboard: { type: VIEW_TYPE, title: "AI Knowledge OS", icon: "brain-circuit" },
+  inbox: { type: INBOX_VIEW_TYPE, title: "Inbox · AI Knowledge OS", icon: "inbox" },
+  knowledge: { type: KNOWLEDGE_VIEW_TYPE, title: "Knowledge Center · AI Knowledge OS", icon: "book-open" },
+  graph: { type: GRAPH_VIEW_TYPE, title: "Knowledge Map · AI Knowledge OS", icon: "share-2" },
+  projects: { type: PROJECT_VIEW_TYPE, title: "Projects · AI Knowledge OS", icon: "folder-kanban" },
+  gantt: { type: GANTT_VIEW_TYPE, title: "Gantt · AI Knowledge OS", icon: "chart-gantt" },
+  agents: { type: AGENT_VIEW_TYPE, title: "AI Agents · AI Knowledge OS", icon: "bot" },
+  analytics: { type: ANALYTICS_VIEW_TYPE, title: "Analytics · AI Knowledge OS", icon: "chart-no-axes-combined" },
+});
+const KNOWLEDGE_OS_VIEW_TYPES = new Set(Object.values(KNOWLEDGE_OS_ROUTES).map((route) => route.type));
 
 const FEATURE_STATUS = Object.freeze({
   IMPLEMENTED: "implemented",
@@ -74,6 +88,8 @@ const DEFAULT_SETTINGS = {
   immersiveMode: true,
   graphSnapshot: null,
   graphDefaultDepth: 2,
+  syncObsidianShellTheme: true,
+  singleLeafMigrationVersion: "",
 };
 
 const AGENT_DEFINITIONS = [
@@ -354,24 +370,28 @@ function wait(milliseconds) {
   return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
 }
 
+function wantsNewLeaf(event) {
+  return Boolean(event && (event.metaKey || event.ctrlKey || event.button === 1));
+}
+
+function bindNavigation(target, handler) {
+  target.addEventListener("click", (event) => handler(event));
+  target.addEventListener("auxclick", (event) => {
+    if (event.button !== 1) return;
+    event.preventDefault();
+    handler(event);
+  });
+  return target;
+}
+
 class KnowledgeOSRouter {
   constructor(plugin) {
     this.plugin = plugin;
   }
 
-  async navigate(route, params = {}) {
-    switch (route) {
-      case "dashboard": return this.plugin.activateView(params);
-      case "inbox": return this.plugin.activateInbox(params);
-      case "knowledge": return this.plugin.activateKnowledge(params);
-      case "graph": return this.plugin.activateGraph(params);
-      case "projects": return this.plugin.activateProjects(params);
-      case "gantt": return this.plugin.activateGantt(params);
-      case "agents": return this.plugin.activateAgents(params);
-      case "analytics": return this.plugin.activateAnalytics(params);
-      case "settings": return this.plugin.openSettings(params.section);
-      default: throw new Error(`Unknown Knowledge OS route: ${route}`);
-    }
+  async navigate(route, options = {}) {
+    if (route === "settings") return this.plugin.openSettings(options.section);
+    return this.plugin.activateRoute(route, options);
   }
 }
 
@@ -817,6 +837,7 @@ async function uniqueVaultPath(app, path) {
 class InboxView extends ItemView {
   constructor(leaf, plugin) {
     super(leaf);
+    this.navigation = true;
     this.plugin = plugin;
     this.filter = "all";
     this.typeFilter = "all";
@@ -833,11 +854,26 @@ class InboxView extends ItemView {
   }
 
   getDisplayText() {
-    return "Inbox · AI Knowledge OS";
+    return "Inbox";
   }
 
   getIcon() {
     return "inbox";
+  }
+
+  getState() {
+    return { filter: this.filter, typeFilter: this.typeFilter, sourceFilter: this.sourceFilter, sortMode: this.sortMode, query: this.query, assistantCollapsed: this.assistantCollapsed };
+  }
+
+  async setState(state = {}, result = {}) {
+    this.filter = state.filter || "all";
+    this.typeFilter = state.typeFilter || "all";
+    this.sourceFilter = state.sourceFilter || "all";
+    this.sortMode = state.sortMode || "captured-desc";
+    this.query = state.query || "";
+    this.assistantCollapsed = Boolean(state.assistantCollapsed);
+    result.history = true;
+    if (this.contentEl.isConnected) await this.render();
   }
 
   async onOpen() {
@@ -935,14 +971,14 @@ class InboxView extends ItemView {
     sidebar.createDiv({ text: "MAIN", cls: "akos-nav-label" });
     const nav = sidebar.createEl("nav", { cls: "akos-nav" });
     const navItems = [
-      ["Dashboard", "知识驾驶舱", "layout-dashboard", () => this.plugin.router.navigate("dashboard"), false],
-      ["Inbox", "信息收集箱", "inbox", () => {}, true, stats.pending],
-      ["Knowledge", "知识中心", "book-open", () => this.plugin.router.navigate("knowledge")],
-      ["Graph", "知识网络", "share-2", () => this.plugin.router.navigate("graph")],
-      ["Projects", "项目管理", "folder-kanban", () => this.plugin.router.navigate("projects")],
-      ["Gantt", "甘特时间线", "chart-gantt", () => this.plugin.router.navigate("gantt")],
-      ["AI Agents", "智能体中心", "bot", () => this.plugin.router.navigate("agents")],
-      ["Analytics", "数据分析", "chart-no-axes-combined", () => this.plugin.router.navigate("analytics")],
+      ["Dashboard", "知识驾驶舱", "layout-dashboard", (event) => this.plugin.router.navigate("dashboard", { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) }), false],
+      ["Inbox", "信息收集箱", "inbox", (event) => this.plugin.router.navigate("inbox", { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) }), true, stats.pending],
+      ["Knowledge", "知识中心", "book-open", (event) => this.plugin.router.navigate("knowledge", { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) })],
+      ["Graph", "知识网络", "share-2", (event) => this.plugin.router.navigate("graph", { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) })],
+      ["Projects", "项目管理", "folder-kanban", (event) => this.plugin.router.navigate("projects", { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) })],
+      ["Gantt", "甘特时间线", "chart-gantt", (event) => this.plugin.router.navigate("gantt", { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) })],
+      ["AI Agents", "智能体中心", "bot", (event) => this.plugin.router.navigate("agents", { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) })],
+      ["Analytics", "数据分析", "chart-no-axes-combined", (event) => this.plugin.router.navigate("analytics", { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) })],
     ];
     navItems.forEach(([title, subtitle, icon, action, active, badge]) => {
       const button = nav.createEl("button", { cls: `akos-nav-item${active ? " is-active" : ""}` });
@@ -951,7 +987,7 @@ class InboxView extends ItemView {
       copy.createDiv({ text: title, cls: "akos-nav-title" });
       copy.createDiv({ text: subtitle, cls: "akos-nav-subtitle" });
       if (badge) button.createSpan({ text: String(badge), cls: "akos-nav-badge" });
-      button.addEventListener("click", action);
+      bindNavigation(button, action);
     });
 
     sidebar.createDiv({ cls: "akos-sidebar-rule" });
@@ -1113,7 +1149,7 @@ class InboxView extends ItemView {
     const body = card.createDiv({ cls: "akos-inbox-item-body" });
     const titleRow = body.createDiv({ cls: "akos-inbox-item-title-row" });
     const title = titleRow.createEl("button", { text: item.file.basename, cls: "akos-inbox-item-title" });
-    title.addEventListener("click", () => this.openFile(item.file.path));
+    bindNavigation(title, (event) => this.openFile(item.file.path, event));
     if (item.frontmatter.demo) titleRow.createSpan({ text: "示例", cls: "akos-inbox-demo" });
     const meta = body.createDiv({ cls: "akos-inbox-item-meta" });
     meta.createSpan({ text: item.source });
@@ -1138,7 +1174,7 @@ class InboxView extends ItemView {
     priority.addEventListener("click", () => this.togglePriority(item));
     const more = createButton(iconRow, "", "ellipsis", "akos-inbox-item-icon-button");
     more.setAttr("aria-label", "打开原笔记");
-    more.addEventListener("click", () => this.openFile(item.file.path));
+    bindNavigation(more, (event) => this.openFile(item.file.path, event));
     const actionRow = actions.createDiv({ cls: "akos-inbox-item-action-row" });
     if (item.status === "pending") {
       const save = createButton(actionRow, "保存", "check", "akos-inbox-save");
@@ -1150,7 +1186,7 @@ class InboxView extends ItemView {
       restore.addEventListener("click", () => this.restoreItem(item));
     } else {
       const saved = createButton(actionRow, "已保存", "circle-check-big", "akos-inbox-saved");
-      saved.addEventListener("click", () => this.openFile(item.file.path));
+      bindNavigation(saved, (event) => this.openFile(item.file.path, event));
     }
     const remove = createButton(actionRow, "", "trash-2", "akos-inbox-delete");
     remove.setAttr("aria-label", "删除");
@@ -1317,9 +1353,9 @@ class InboxView extends ItemView {
     return sorted;
   }
 
-  async openFile(path) {
+  async openFile(path, event) {
     const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
-    if (file) await this.app.workspace.getLeaf("tab").openFile(file);
+    if (file) await this.plugin.openResource(file, { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) });
   }
 
   openFolder(path) {
@@ -1347,7 +1383,7 @@ class InboxView extends ItemView {
       const path = await uniqueVaultPath(this.app, `${ROOT}/00-Inbox/${name}.md`);
       const content = `---\ntitle: "${name.replace(/"/g, "\\\"")}"\ntype: inbox\nstatus: pending\nsource: 快速记录\ncaptured_at: ${new Date().toISOString()}\ntags:\n  - inbox\n---\n\n# ${name}\n\n## 原始信息\n\n\n## 下一步\n\n- [ ] 让 AI 建议分类、标签和关联\n`;
       const file = await this.app.vault.create(path, content);
-      await this.app.workspace.getLeaf("tab").openFile(file);
+      await this.plugin.openResource(file, { sourceLeaf: this.leaf });
       new Notice("已保存到 Inbox");
     }).open();
   }
@@ -1457,7 +1493,7 @@ class InboxView extends ItemView {
       const path = await uniqueVaultPath(this.app, `${ROOT}/00-Inbox/${name}.md`);
       file = await this.app.vault.create(path, content);
     }
-    await this.app.workspace.getLeaf("tab").openFile(file);
+    await this.plugin.openResource(file, { sourceLeaf: this.leaf });
     new Notice(page ? "网页正文已保存到 Inbox" : "网页链接已保存，但正文解析失败");
   }
 
@@ -1703,7 +1739,7 @@ class InboxView extends ItemView {
     const rows = items.map((item) => `| [[${item.file.path.replace(/\.md$/, "")}\|${item.file.basename}]] | ${item.status} | ${item.source} | ${item.suggested.join("、")} |`).join("\n");
     const content = `---\ntitle: "${date} Inbox 导出"\ntype: report\ncreated: ${new Date().toISOString()}\ntags:\n  - report/inbox\n---\n\n# ${date} Inbox 导出\n\n| 内容 | 状态 | 来源 | AI 建议标签 |\n| --- | --- | --- | --- |\n${rows}\n`;
     const file = await this.app.vault.create(path, content);
-    await this.app.workspace.getLeaf("tab").openFile(file);
+    await this.plugin.openResource(file, { sourceLeaf: this.leaf });
     new Notice("Inbox 报告已导出");
   }
 }
@@ -1715,6 +1751,7 @@ function itemsPercent(value, total) {
 class KnowledgeDashboardView extends ItemView {
   constructor(leaf, plugin) {
     super(leaf);
+    this.navigation = true;
     this.plugin = plugin;
     this.refresh = debounce(() => this.render(), 350);
     this.searchResults = null;
@@ -1734,6 +1771,17 @@ class KnowledgeDashboardView extends ItemView {
 
   getIcon() {
     return "brain-circuit";
+  }
+
+  getState() {
+    return { dashboardRecentMode: this.dashboardRecentMode, copilotCollapsed: this.copilotCollapsed };
+  }
+
+  async setState(state = {}, result = {}) {
+    this.dashboardRecentMode = state.dashboardRecentMode || "used";
+    this.copilotCollapsed = Boolean(state.copilotCollapsed);
+    result.history = true;
+    if (this.contentEl.isConnected) await this.render();
   }
 
   async onOpen() {
@@ -1846,14 +1894,14 @@ class KnowledgeDashboardView extends ItemView {
     const mainLabel = sidebar.createDiv({ text: "MAIN", cls: "akos-nav-label" });
     mainLabel.setAttr("aria-label", "主导航");
     const items = [
-      ["Dashboard", "知识驾驶舱", "layout-dashboard", () => this.plugin.router.navigate("dashboard"), true],
-      ["Inbox", "未整理信息", "inbox", () => this.plugin.router.navigate("inbox"), false, stats.inbox],
-      ["Knowledge", "知识中心", "book-open", () => this.plugin.router.navigate("knowledge")],
-      ["Graph", "知识网络", "share-2", () => this.plugin.router.navigate("graph")],
-      ["Projects", "项目管理", "folder-kanban", () => this.plugin.router.navigate("projects")],
-      ["Gantt", "甘特时间线", "chart-gantt", () => this.plugin.router.navigate("gantt")],
-      ["AI Agents", "智能体中心", "bot", () => this.plugin.router.navigate("agents")],
-      ["Analytics", "数据分析", "chart-no-axes-combined", () => this.plugin.router.navigate("analytics")],
+      ["Dashboard", "知识驾驶舱", "layout-dashboard", (event) => this.plugin.router.navigate("dashboard", { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) }), true],
+      ["Inbox", "未整理信息", "inbox", (event) => this.plugin.router.navigate("inbox", { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) }), false, stats.inbox],
+      ["Knowledge", "知识中心", "book-open", (event) => this.plugin.router.navigate("knowledge", { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) })],
+      ["Graph", "知识网络", "share-2", (event) => this.plugin.router.navigate("graph", { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) })],
+      ["Projects", "项目管理", "folder-kanban", (event) => this.plugin.router.navigate("projects", { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) })],
+      ["Gantt", "甘特时间线", "chart-gantt", (event) => this.plugin.router.navigate("gantt", { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) })],
+      ["AI Agents", "智能体中心", "bot", (event) => this.plugin.router.navigate("agents", { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) })],
+      ["Analytics", "数据分析", "chart-no-axes-combined", (event) => this.plugin.router.navigate("analytics", { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) })],
     ];
     const nav = sidebar.createEl("nav", { cls: "akos-nav" });
     items.forEach(([title, subtitle, icon, action, active, badge]) => {
@@ -1863,7 +1911,7 @@ class KnowledgeDashboardView extends ItemView {
       copy.createDiv({ text: title, cls: "akos-nav-title" });
       copy.createDiv({ text: subtitle, cls: "akos-nav-subtitle" });
       if (badge) button.createSpan({ text: String(badge), cls: "akos-nav-badge" });
-      button.addEventListener("click", action);
+      bindNavigation(button, action);
     });
 
     sidebar.createDiv({ cls: "akos-sidebar-rule" });
@@ -1972,7 +2020,7 @@ class KnowledgeDashboardView extends ItemView {
     lead.createEl("h3", { text: `发现 ${Math.min(3, Math.max(1, stats.orphans))} 个值得加强的连接` });
     lead.createEl("p", { text: stats.orphans ? `当前有 ${stats.orphans} 篇孤立笔记。先给高价值笔记补上项目或概念链接。` : "知识网络连接良好，可以开始提炼跨领域洞察。" });
     const detail = createButton(lead, "查看知识网络", "arrow-right", "akos-primary-soft");
-    detail.addEventListener("click", () => this.plugin.router.navigate("graph"));
+    bindNavigation(detail, (event) => this.plugin.router.navigate("graph", { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) }));
 
     const list = body.createDiv({ cls: "akos-connection-list" });
     const connections = [
@@ -1991,7 +2039,7 @@ class KnowledgeDashboardView extends ItemView {
       line.createSpan();
       copy.createEl("strong", { text: to });
       row.createSpan({ text: reason, cls: "akos-chip" });
-      row.addEventListener("click", () => this.openByName(from.replace(" 模式", "")));
+      bindNavigation(row, (event) => this.openByName(from.replace(" 模式", ""), event));
     });
   }
 
@@ -2018,7 +2066,7 @@ class KnowledgeDashboardView extends ItemView {
       const tag = cache?.frontmatter?.domain || cache?.frontmatter?.type || file.parent?.name;
       if (tag) row.createSpan({ text: String(tag), cls: "akos-chip" });
       row.createSpan({ text: formatRelativeTime(file.stat.mtime), cls: "akos-recent-time" });
-      row.addEventListener("click", () => this.openFile(file.path));
+      bindNavigation(row, (event) => this.openFile(file.path, event));
     });
   }
 
@@ -2027,7 +2075,7 @@ class KnowledgeDashboardView extends ItemView {
     const heading = section.createDiv({ cls: "akos-section-heading" });
     heading.createEl("h2", { text: "知识图谱概览" });
     const open = createButton(heading, "打开 Canvas", "maximize-2", "akos-link-button");
-    open.addEventListener("click", () => this.openFile(`${ROOT}/Knowledge Map.canvas`));
+    bindNavigation(open, (event) => this.openFile(`${ROOT}/Knowledge Map.canvas`, event));
     const grid = section.createDiv({ cls: "akos-graph-grid" });
     const legend = grid.createDiv({ cls: "akos-legend" });
     const colors = ["purple", "cyan", "orange", "blue", "gray"];
@@ -2127,7 +2175,7 @@ class KnowledgeDashboardView extends ItemView {
           copy.createEl("strong", { text: result.file.basename });
           copy.createEl("p", { text: result.snippet });
           row.createSpan({ text: String(result.score), cls: "akos-score" });
-          row.addEventListener("click", () => this.openFile(result.file.path));
+          bindNavigation(row, (event) => this.openFile(result.file.path, event));
         });
       }
     }
@@ -2201,18 +2249,18 @@ class KnowledgeDashboardView extends ItemView {
     model.createSpan({ text: "Claudian · Local Vault" });
   }
 
-  async openFile(path) {
+  async openFile(path, event) {
     const file = this.app.vault.getAbstractFileByPath(normalizePath(path));
     if (!file) {
       new Notice(`未找到：${path}`);
       return;
     }
-    await this.app.workspace.getLeaf("tab").openFile(file);
+    await this.plugin.openResource(file, { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) });
   }
 
-  async openByName(name) {
+  async openByName(name, event) {
     const file = this.app.metadataCache.getFirstLinkpathDest(name, "") || this.app.vault.getMarkdownFiles().find((item) => item.basename === name);
-    if (file) await this.app.workspace.getLeaf("tab").openFile(file);
+    if (file) await this.plugin.openResource(file, { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) });
   }
 
   openFolder(path) {
@@ -2328,7 +2376,7 @@ class KnowledgeDashboardView extends ItemView {
       const path = await this.uniquePath(`${ROOT}/00-Inbox/${name}.md`);
       const content = `---\ntitle: "${name.replace(/\"/g, "\\\"")}"\ncreated: ${new Date().toISOString()}\nstatus: inbox\ntags:\n  - inbox\n---\n\n# ${name}\n\n## 原始信息\n\n\n## 为什么值得保留\n\n\n## 下一步\n\n- [ ] 判断归属并建立 Wikilink\n`;
       const file = await this.app.vault.create(path, content);
-      await this.app.workspace.getLeaf("tab").openFile(file);
+      await this.plugin.openResource(file, { sourceLeaf: this.leaf });
     }).open();
   }
 
@@ -2339,7 +2387,7 @@ class KnowledgeDashboardView extends ItemView {
       const context = this.getContextFile();
       const content = `---\ntitle: "${name.replace(/\"/g, "\\\"")}"\ntype: content\nstatus: draft\ncreated: ${new Date().toISOString()}\ntags:\n  - content/draft\n---\n\n# ${name}\n\n> [!info] 写作任务\n> 基于知识库形成有证据、有立场的内容。${context ? `起点：[[${context.path.replace(/\.md$/, "")}]]` : ""}\n\n## 受众与问题\n\n## 核心判断\n\n## 证据与案例\n\n## 结构\n\n## 成稿\n\n## 引用笔记\n\n`;
       const file = await this.app.vault.create(path, content);
-      await this.app.workspace.getLeaf("tab").openFile(file);
+      await this.plugin.openResource(file, { sourceLeaf: this.leaf });
       new Notice("内容草稿已创建");
     }).open();
   }
@@ -2350,7 +2398,7 @@ class KnowledgeDashboardView extends ItemView {
       const path = await this.uniquePath(`${ROOT}/Projects/${name}.md`);
       const content = `---\ntitle: "${name.replace(/\"/g, "\\\"")}"\ntype: project\nstatus: planning\nprogress: 0\nnext_action: 明确可验收目标\ndue:\ntags:\n  - project/active\n---\n\n# ${name}\n\n> [!info] 项目目标\n> 写成可验收的结果，而不是活动描述。\n\n## 成功标准\n\n- [ ] \n\n## 关联知识\n\n## 下一步\n\n- [ ] 明确可验收目标\n\n## 决策记录\n\n`;
       const file = await this.app.vault.create(path, content);
-      await this.app.workspace.getLeaf("tab").openFile(file);
+      await this.plugin.openResource(file, { sourceLeaf: this.leaf });
       new Notice("项目已创建，并已进入项目 Base");
     }).open();
   }
@@ -2407,11 +2455,26 @@ class KnowledgeCenterView extends KnowledgeDashboardView {
   }
 
   getDisplayText() {
-    return "Knowledge Center · AI Knowledge OS";
+    return "Knowledge";
   }
 
   getIcon() {
     return "book-open";
+  }
+
+  getState() {
+    return { knowledgeTab: this.knowledgeTab, knowledgeDomain: this.knowledgeDomain, knowledgeQuery: this.knowledgeQuery, knowledgeSort: this.knowledgeSort, selectedCollection: this.selectedCollection, copilotCollapsed: this.copilotCollapsed };
+  }
+
+  async setState(state = {}, result = {}) {
+    this.knowledgeTab = state.knowledgeTab || "all";
+    this.knowledgeDomain = state.knowledgeDomain || "all";
+    this.knowledgeQuery = state.knowledgeQuery || "";
+    this.knowledgeSort = state.knowledgeSort || "recent";
+    this.selectedCollection = state.selectedCollection || null;
+    this.copilotCollapsed = Boolean(state.copilotCollapsed);
+    result.history = true;
+    if (this.contentEl.isConnected) await this.render();
   }
 
   async onOpen() {
@@ -2664,7 +2727,7 @@ class KnowledgeCenterView extends KnowledgeDashboardView {
       row.dataset.category = note.category;
       createIcon(row, index % 3 === 2 ? "file-chart-column" : "file-text", `akos-knowledge-note-icon is-${domain.color}`);
       const title = row.createEl("button", { text: note.file.basename, cls: "akos-knowledge-note-title" });
-      title.addEventListener("click", () => this.openFile(note.file.path));
+      bindNavigation(title, (event) => this.openFile(note.file.path, event));
       const tagWrap = row.createDiv({ cls: "akos-knowledge-note-tags" });
       (note.tags.length ? note.tags : [note.category]).slice(0, 2).forEach((tag) => tagWrap.createSpan({ text: tag }));
       row.createEl("p", { text: note.snippet, cls: "akos-knowledge-note-snippet" });
@@ -2675,7 +2738,7 @@ class KnowledgeCenterView extends KnowledgeDashboardView {
       favorite.addEventListener("click", () => this.toggleKnowledgeFavorite(note));
       const more = createButton(row, "", "ellipsis", "akos-knowledge-more");
       more.setAttr("aria-label", "打开笔记");
-      more.addEventListener("click", () => this.openFile(note.file.path));
+      bindNavigation(more, (event) => this.openFile(note.file.path, event));
     });
     this.applyKnowledgeFilter();
   }
@@ -2724,7 +2787,7 @@ class KnowledgeCenterView extends KnowledgeDashboardView {
     graphHeader.createEl("h2", { text: "Obsidian 关系图谱" });
     graphHeader.createSpan({ text: "原生 Graph · 可缩放与拖拽", cls: "akos-native-graph-caption" });
     const graphButton = createButton(graphHeader, "打开完整图谱", "maximize-2", "akos-link-button akos-native-graph-open");
-    graphButton.addEventListener("click", () => this.openNativeGraph());
+    bindNavigation(graphButton, (event) => this.openNativeGraph(event));
     const body = graph.createDiv({ cls: "akos-native-graph-body" });
     const host = body.createDiv({ cls: "akos-native-graph-host" });
     host.createDiv({ text: "正在载入 Obsidian 关系图谱…", cls: "akos-native-graph-loading" });
@@ -2738,7 +2801,7 @@ class KnowledgeCenterView extends KnowledgeDashboardView {
       const path = await this.uniquePath(`${ROOT}/Knowledge/${name}.md`);
       const content = `---\ntitle: ${yamlQuote(name)}\ntype: concept\nstatus: seed\ndomain:\nfavorite: false\ncreated: ${new Date().toISOString()}\ntags:\n  - knowledge\n---\n\n# ${name}\n\n## 核心定义\n\n\n## 证据与边界\n\n\n## 关联知识\n\n`;
       const file = await this.app.vault.create(path, content);
-      await this.app.workspace.getLeaf("tab").openFile(file);
+      await this.plugin.openResource(file, { sourceLeaf: this.leaf });
       new Notice("知识笔记已创建");
     }).open();
   }
@@ -2781,7 +2844,7 @@ class KnowledgeCenterView extends KnowledgeDashboardView {
       const fallback = host.createDiv({ cls: "akos-native-graph-fallback" });
       fallback.createEl("strong", { text: "Obsidian Graph 暂时不可用" });
       const open = createButton(fallback, "打开完整图谱", "share-2", "akos-secondary-button");
-      open.addEventListener("click", () => this.openNativeGraph());
+      bindNavigation(open, (event) => this.openNativeGraph(event));
     }
   }
 
@@ -2811,10 +2874,8 @@ class KnowledgeCenterView extends KnowledgeDashboardView {
     renderer.queueRender?.();
   }
 
-  async openNativeGraph() {
-    const leaf = this.app.workspace.getLeaf(true);
-    await leaf.setViewState({ type: "graph", active: true });
-    await this.app.workspace.revealLeaf(leaf);
+  async openNativeGraph(event) {
+    await this.plugin.openResource({ type: "graph" }, { sourceLeaf: this.leaf, newLeaf: wantsNewLeaf(event) });
   }
 
   renderKnowledgeAssistant(app, data) {
@@ -2849,7 +2910,7 @@ class KnowledgeCenterView extends KnowledgeDashboardView {
         const copy = row.createDiv();
         copy.createEl("strong", { text: result.file.basename });
         copy.createEl("p", { text: result.snippet });
-        row.addEventListener("click", () => this.openFile(result.file.path));
+        bindNavigation(row, (event) => this.openFile(result.file.path, event));
       });
     }
     const recommendation = scroll.createDiv({ cls: "akos-knowledge-recommendation" });
@@ -2861,7 +2922,7 @@ class KnowledgeCenterView extends KnowledgeDashboardView {
       const copy = card.createDiv();
       copy.createEl("strong", { text: recommended.file.basename });
       copy.createEl("p", { text: `${recommended.links} 个知识连接 · ${recommended.category}` });
-      card.addEventListener("click", () => this.openFile(recommended.file.path));
+      bindNavigation(card, (event) => this.openFile(recommended.file.path, event));
     }
     recommendation.createEl("h3", { text: "你最近关注" });
     const assistantTags = data.tags.filter(([tag]) => !/(^|\/)(system|template|inbox|类型|状态)(\/|$)/i.test(tag));
@@ -2942,11 +3003,24 @@ class KnowledgeGraphView extends KnowledgeDashboardView {
   }
 
   getDisplayText() {
-    return "Knowledge Map · AI Knowledge OS";
+    return "Graph";
   }
 
   getIcon() {
     return "share-2";
+  }
+
+  getState() {
+    return { selectedNodeId: this.selectedNodeId, graphFilter: this.graphFilter, graphDepth: this.graphDepth, copilotCollapsed: this.copilotCollapsed };
+  }
+
+  async setState(state = {}, result = {}) {
+    this.selectedNodeId = state.selectedNodeId || "fde";
+    this.graphFilter = state.graphFilter || "all";
+    this.graphDepth = Number(state.graphDepth || this.plugin.settings.graphDefaultDepth || 2);
+    this.copilotCollapsed = Boolean(state.copilotCollapsed);
+    result.history = true;
+    if (this.contentEl.isConnected) await this.render();
   }
 
   async onOpen() {
@@ -3396,7 +3470,7 @@ class KnowledgeGraphView extends KnowledgeDashboardView {
     if (nodeTags.length > 3) tags.createSpan({ text: `+${nodeTags.length - 3}`, cls: "akos-tag akos-node-tag-more" });
     const open = createButton(panel, "打开笔记", "file-text", "akos-node-primary");
     open.disabled = !node.notes.length;
-    open.addEventListener("click", () => node.notes[0] && this.openFile(node.notes[0].file.path));
+    bindNavigation(open, (event) => node.notes[0] && this.openFile(node.notes[0].file.path, event));
     const path = createButton(panel, "查看路径", "route", "akos-node-secondary");
     path.addEventListener("click", () => this.showNodePaths(data));
   }
@@ -3478,7 +3552,7 @@ class KnowledgeGraphView extends KnowledgeDashboardView {
         const copy = row.createDiv();
         copy.createEl("strong", { text: result.file.basename });
         copy.createEl("p", { text: result.snippet });
-        row.addEventListener("click", () => this.openFile(result.file.path));
+        bindNavigation(row, (event) => this.openFile(result.file.path, event));
       });
     }
     const context = scroll.createDiv({ cls: "akos-context akos-graph-context" });
@@ -3555,7 +3629,7 @@ class KnowledgeGraphView extends KnowledgeDashboardView {
       const paths = this.getTopicPaths(data, node, 4);
       const content = `---\ntitle: ${yamlQuote(name)}\ntype: graph-report\ncreated: ${new Date().toISOString()}\nroot_node: ${yamlQuote(node.label)}\ntags:\n  - report/knowledge-map\n---\n\n# ${name}\n\n## 当前节点\n\n**${node.label}** · ${node.notes.length} 篇笔记 · ${node.links} 条连接\n\n${this.nodeSummary(node)}\n\n## 真实 Wikilink 路径\n\n${paths.length ? paths.map((entry) => `- ${entry.path.map((path) => `[[${path.replace(/\.md$/, "")}]]`).join(" → ")}`).join("\n") : "- 暂无可追溯路径"}\n\n## 建议关联（尚未建立）\n\n${data.hiddenAssociations.slice(0, 5).map((item) => `- [[${item.left.file.path.replace(/\.md$/, "")}]] ↔ [[${item.right.file.path.replace(/\.md$/, "")}]]（${item.common.length} 个共同邻居）`).join("\n") || "- 暂无"}\n\n## 下一步\n\n- [ ] 补充薄弱节点\n- [ ] 审核建议关联后再建立双链\n`;
       const file = await this.app.vault.create(path, content);
-      await this.app.workspace.getLeaf("tab").openFile(file);
+      await this.plugin.openResource(file, { sourceLeaf: this.leaf });
       new Notice("知识路径报告已创建");
     }, `${node.label} 知识路径报告`, "生成报告").open();
   }
@@ -3599,6 +3673,16 @@ class AIKnowledgeOSSettingTab extends PluginSettingTab {
         .onChange(async (value) => {
           this.plugin.settings.immersiveMode = value;
           await this.plugin.saveSettings();
+        }));
+    new Setting(containerEl)
+      .setName("同步 Obsidian 外壳主题")
+      .setDesc("让标题栏、页签、侧栏、状态栏、菜单和弹窗使用 Knowledge OS 深色视觉；不会重绘普通笔记正文。")
+      .addToggle((toggle) => toggle
+        .setValue(this.plugin.settings.syncObsidianShellTheme)
+        .onChange(async (value) => {
+          this.plugin.settings.syncObsidianShellTheme = value;
+          await this.plugin.saveSettings();
+          this.plugin.applyShellTheme();
         }));
     containerEl.createEl("h3", { text: "Graph", attr: { id: "akos-settings-graph" } });
     new Setting(containerEl)
@@ -3645,11 +3729,24 @@ class ProjectCenterView extends KnowledgeDashboardView {
   }
 
   getDisplayText() {
-    return "Projects · AI Knowledge OS";
+    return "Projects";
   }
 
   getIcon() {
     return "folder-kanban";
+  }
+
+  getState() {
+    return { selectedProjectPath: this.selectedProjectPath, projectFilter: this.projectFilter, selectedProjectCollection: this.selectedProjectCollection, copilotCollapsed: this.copilotCollapsed };
+  }
+
+  async setState(state = {}, result = {}) {
+    this.selectedProjectPath = state.selectedProjectPath || null;
+    this.projectFilter = state.projectFilter || "";
+    this.selectedProjectCollection = state.selectedProjectCollection || null;
+    this.copilotCollapsed = Boolean(state.copilotCollapsed);
+    result.history = true;
+    if (this.contentEl.isConnected) await this.render();
   }
 
   async onOpen() {
@@ -3803,7 +3900,7 @@ class ProjectCenterView extends KnowledgeDashboardView {
     const copy = header.createDiv();
     copy.createEl("h1", { text: "Projects" });
     copy.createEl("p", { text: "将知识、任务、客户与交付流程组织成可执行的项目系统。" });
-    createButton(header, "项目视图设置", "settings", "akos-knowledge-settings").addEventListener("click", () => this.openFile(`${ROOT}/Projects/Projects.base`));
+    bindNavigation(createButton(header, "项目视图设置", "settings", "akos-knowledge-settings"), (event) => this.openFile(`${ROOT}/Projects/Projects.base`, event));
   }
 
   renderProjectStats(parent, data) {
@@ -3854,7 +3951,7 @@ class ProjectCenterView extends KnowledgeDashboardView {
     meter.createSpan({ attr: { style: `width:${project.progress}%` } });
     progress.createDiv({ text: project.due ? `预计完成：${project.due}` : `下一步：${project.nextAction}` });
     const actions = progress.createDiv({ cls: "akos-project-focus-actions" });
-    createButton(actions, "查看项目详情", "arrow-right", "akos-primary-button").addEventListener("click", () => this.openFile(project.file.path));
+    bindNavigation(createButton(actions, "查看项目详情", "arrow-right", "akos-primary-button"), (event) => this.openFile(project.file.path, event));
     createButton(actions, "生成周报", "file-text", "akos-secondary-button").addEventListener("click", () => this.generateWeeklyReport(project));
   }
 
@@ -3998,7 +4095,7 @@ class ProjectCenterView extends KnowledgeDashboardView {
         const sources = response.createDiv({ cls: "akos-project-search-sources" });
         this.projectAiResponse.sources.forEach((result) => {
           const button = createButton(sources, result.file.basename, "file-text", "akos-search-result");
-          button.addEventListener("click", () => this.openFile(result.file.path));
+          bindNavigation(button, (event) => this.openFile(result.file.path, event));
         });
       }
     }
@@ -4093,7 +4190,7 @@ class ProjectCenterView extends KnowledgeDashboardView {
     const pending = project.tasks.filter((task) => !task.done).map((task) => `- [ ] ${task.text}`).join("\n") || "- 暂无";
     const content = `---\ntitle: "${date} ${project.title}项目周报"\ntype: report\nproject: "[[${project.file.path.replace(/\.md$/, "")}]]"\ncreated: ${new Date().toISOString()}\ntags:\n  - report/project\n---\n\n# ${project.title} · 项目周报\n\n## 本周状态\n\n- 进度：${project.progress}%\n- 状态：${this.projectStatusLabel(project.status)}\n- 下一步：${project.nextAction}\n\n## 已完成\n\n${completed}\n\n## 下一步任务\n\n${pending}\n\n## 风险与决策\n\n- [ ] 补充本周风险与需要确认的决策\n`;
     const file = await this.app.vault.create(path, content);
-    await this.app.workspace.getLeaf("tab").openFile(file);
+    await this.plugin.openResource(file, { sourceLeaf: this.leaf });
     new Notice("项目周报已生成");
   }
 }
@@ -4111,8 +4208,20 @@ class KnowledgeGanttView extends KnowledgeDashboardView {
   }
 
   getViewType() { return GANTT_VIEW_TYPE; }
-  getDisplayText() { return "Gantt · AI Knowledge OS"; }
+  getDisplayText() { return "Gantt"; }
   getIcon() { return "chart-gantt"; }
+  getState() {
+    const currentDate = this.nativeGanttLeaf?.view?.getCurrentDate?.() || this.nativeGanttLeaf?.view?.currentDate;
+    return { ganttViewMode: this.ganttViewMode, currentDate: currentDate instanceof Date ? currentDate.toISOString() : null, copilotCollapsed: this.copilotCollapsed };
+  }
+
+  async setState(state = {}, result = {}) {
+    this.ganttViewMode = new Set(["day", "week", "month", "year", "gantt"]).has(state.ganttViewMode) ? state.ganttViewMode : "gantt";
+    this.ganttCurrentDate = state.currentDate && !Number.isNaN(Date.parse(state.currentDate)) ? new Date(state.currentDate) : new Date();
+    this.copilotCollapsed = Boolean(state.copilotCollapsed);
+    result.history = true;
+    if (this.contentEl.isConnected) await this.render();
+  }
 
   async onOpen() {
     this.contentEl.addClass("akos-view-content", "akos-gantt-view-content");
@@ -4219,6 +4328,7 @@ class KnowledgeGanttView extends KnowledgeDashboardView {
       if (this.nativeGanttHost !== host || !host.isConnected || !this.nativeGanttLeaf) return;
       host.appendChild(this.nativeGanttLeaf.containerEl);
       if (typeof this.nativeGanttLeaf.view?.switchView === "function") {
+        if (this.ganttCurrentDate) this.nativeGanttLeaf.view.currentDate = new Date(this.ganttCurrentDate);
         await this.nativeGanttLeaf.view.switchView(this.ganttViewMode);
       }
       host.querySelector(".akos-native-gantt-loading")?.remove();
@@ -4308,8 +4418,15 @@ class AgentCenterView extends KnowledgeDashboardView {
   }
 
   getViewType() { return AGENT_VIEW_TYPE; }
-  getDisplayText() { return "AI Agents · AI Knowledge OS"; }
+  getDisplayText() { return "AI Agents"; }
   getIcon() { return "bot"; }
+  getState() { return { selectedAgentId: this.selectedAgentId, copilotCollapsed: this.copilotCollapsed }; }
+  async setState(state = {}, result = {}) {
+    this.selectedAgentId = state.selectedAgentId || "organizer";
+    this.copilotCollapsed = Boolean(state.copilotCollapsed);
+    result.history = true;
+    if (this.contentEl.isConnected) await this.render();
+  }
 
   async onOpen() {
     this.contentEl.addClass("akos-view-content", "akos-agent-view-content");
@@ -4453,7 +4570,7 @@ class AgentCenterView extends KnowledgeDashboardView {
       item.createEl("strong", { text: String(value) });
     });
     const actions = copy.createDiv({ cls: "akos-agent-featured-actions" });
-    createButton(actions, "查看详情", "scan-eye", "akos-secondary-button").addEventListener("click", () => this.openFile(this.plugin.agentTaskStore.definitionPath(agent)));
+    bindNavigation(createButton(actions, "查看详情", "scan-eye", "akos-secondary-button"), (event) => this.openFile(this.plugin.agentTaskStore.definitionPath(agent), event));
     createButton(actions, "立即运行", "play", "akos-primary-button").addEventListener("click", () => this.runAgent(agent));
     const timeline = featured.createDiv({ cls: "akos-agent-timeline" });
     timeline.createEl("h3", { text: "能力与输出" });
@@ -4529,7 +4646,7 @@ class AgentCenterView extends KnowledgeDashboardView {
       row.createSpan({ text: formatRelativeTime(execution.updated) });
       const open = createButton(row, "", "external-link", "akos-agent-run-open");
       open.setAttr("aria-label", "打开执行记录");
-      open.addEventListener("click", () => this.openFile(execution.file.path));
+      bindNavigation(open, (event) => this.openFile(execution.file.path, event));
       if (execution.status === AGENT_RUN_STATUSES.WAITING_REVIEW) {
         const approve = createButton(row, "验收", "check", "akos-agent-run-approve");
         approve.addEventListener("click", () => this.approveExecution(execution));
@@ -4640,8 +4757,14 @@ class KnowledgeAnalyticsView extends KnowledgeDashboardView {
   }
 
   getViewType() { return ANALYTICS_VIEW_TYPE; }
-  getDisplayText() { return "Analytics · AI Knowledge OS"; }
+  getDisplayText() { return "Analytics"; }
   getIcon() { return "chart-no-axes-combined"; }
+  getState() { return { copilotCollapsed: this.copilotCollapsed }; }
+  async setState(state = {}, result = {}) {
+    this.copilotCollapsed = Boolean(state.copilotCollapsed);
+    result.history = true;
+    if (this.contentEl.isConnected) await this.render();
+  }
 
   async onOpen() {
     this.contentEl.addClass("akos-view-content", "akos-analytics-view-content");
@@ -4868,7 +4991,7 @@ class KnowledgeAnalyticsView extends KnowledgeDashboardView {
     const ranking = grid.createDiv({ cls: "akos-panel akos-analytics-ranking" });
     const rankHead = ranking.createDiv({ cls: "akos-analytics-panel-head" }); rankHead.createEl("h2", { text: "高价值知识排行" });
     const tableHead = ranking.createDiv({ cls: "akos-analytics-rank-row is-head" }); ["#", "标题", "价值", "连接数", "更新时间"].forEach((label) => tableHead.createSpan({ text: label }));
-    data.highValue.forEach((note, index) => { const row = ranking.createEl("button", { cls: "akos-analytics-rank-row" }); row.setAttr("title", `入链 ${note.incomingLinks} · 出链 ${note.outgoingLinks} · 标签 ${note.tagCount} · 项目引用 ${note.projectReferences} · 正文 ${note.contentLength} 字符 · 得分 ${note.finalScore}`); row.createSpan({ text: String(index + 1), cls: `is-rank-${index + 1}` }); row.createSpan({ text: note.file.basename }); row.createSpan({ text: "★".repeat(note.value) + "☆".repeat(5 - note.value), cls: "akos-analytics-stars" }); row.createSpan({ text: String(note.incoming + note.outgoing) }); row.createSpan({ text: formatRelativeTime(note.file.stat.mtime) }); row.addEventListener("click", () => this.openFile(note.file.path)); });
+    data.highValue.forEach((note, index) => { const row = ranking.createEl("button", { cls: "akos-analytics-rank-row" }); row.setAttr("title", `入链 ${note.incomingLinks} · 出链 ${note.outgoingLinks} · 标签 ${note.tagCount} · 项目引用 ${note.projectReferences} · 正文 ${note.contentLength} 字符 · 得分 ${note.finalScore}`); row.createSpan({ text: String(index + 1), cls: `is-rank-${index + 1}` }); row.createSpan({ text: note.file.basename }); row.createSpan({ text: "★".repeat(note.value) + "☆".repeat(5 - note.value), cls: "akos-analytics-stars" }); row.createSpan({ text: String(note.incoming + note.outgoing) }); row.createSpan({ text: formatRelativeTime(note.file.stat.mtime) }); bindNavigation(row, (event) => this.openFile(note.file.path, event)); });
     const gaps = grid.createDiv({ cls: "akos-panel akos-analytics-gaps" });
     const gapsHead = gaps.createDiv({ cls: "akos-analytics-panel-head" }); gapsHead.createEl("h2", { text: "知识体系缺口" });
     data.gaps.forEach((gap) => { const item = gaps.createDiv({ cls: "akos-analytics-gap" }); createIcon(item, gap.count < 3 ? "triangle-alert" : "circle-check"); const copy = item.createDiv(); copy.createEl("strong", { text: gap.label }); copy.createSpan({ text: gap.count < 3 ? gap.suggestion : `已有 ${gap.count} 篇，继续连接到项目。` }); item.createEl("b", { text: `${gap.count} 篇` }); });
@@ -4916,7 +5039,7 @@ class KnowledgeAnalyticsView extends KnowledgeDashboardView {
     const rankings = data.highValue.map((note, index) => `${index + 1}. [[${note.file.path.replace(/\.md$/, "")}]] — ${note.incoming + note.outgoing} 条连接`).join("\n");
     const gaps = data.gaps.map((gap) => `- ${gap.label}：${gap.count} 篇。${gap.suggestion}`).join("\n");
     const content = `---\ntitle: "${date} 知识分析周报"\ntype: report\ncreated: ${new Date().toISOString()}\ntags:\n  - report/analytics\n---\n\n# ${date} 知识分析周报\n\n## 核心指标\n\n- 本周新增：${data.weekAdded}\n- 总笔记：${data.notes.length}\n- 总连接：${data.base.links}\n- 健康度：${data.health}%\n\n## 高价值知识\n\n${rankings || "暂无"}\n\n## 知识缺口\n\n${gaps}\n`;
-    const file = await this.app.vault.create(path, content); await this.app.workspace.getLeaf("tab").openFile(file); new Notice("知识分析周报已生成");
+    const file = await this.app.vault.create(path, content); await this.plugin.openResource(file, { sourceLeaf: this.leaf }); new Notice("知识分析周报已生成");
   }
 }
 
@@ -4926,10 +5049,14 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
     this.isUnloading = false;
     this.runtimeInitialized = false;
     this.startupTimer = null;
+    this.navigationSerialByLeaf = new WeakMap();
+    this.navigationQueueByLeaf = new WeakMap();
+    this.routeStateByLeaf = new WeakMap();
     this.router = new KnowledgeOSRouter(this);
     this.agentTaskStore = new AgentTaskStore(this);
     this.claudianAdapter = new ClaudianAdapter(this);
     this.lastFile = this.app.workspace.getActiveFile();
+    this.applyShellTheme();
     this.registerView(VIEW_TYPE, (leaf) => new KnowledgeDashboardView(leaf, this));
     this.registerView(INBOX_VIEW_TYPE, (leaf) => new InboxView(leaf, this));
     this.registerView(KNOWLEDGE_VIEW_TYPE, (leaf) => new KnowledgeCenterView(leaf, this));
@@ -4938,7 +5065,7 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
     this.registerView(GANTT_VIEW_TYPE, (leaf) => new KnowledgeGanttView(leaf, this));
     this.registerView(AGENT_VIEW_TYPE, (leaf) => new AgentCenterView(leaf, this));
     this.registerView(ANALYTICS_VIEW_TYPE, (leaf) => new KnowledgeAnalyticsView(leaf, this));
-    this.addRibbonIcon("brain-circuit", "打开 AI Knowledge OS", () => this.activateView());
+    this.addRibbonIcon("brain-circuit", "打开 AI Knowledge OS", (event) => this.activateView({ newLeaf: wantsNewLeaf(event) }));
     this.addCommand({
       id: "open-dashboard",
       name: "打开知识驾驶舱",
@@ -5019,6 +5146,7 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
   async initializeRuntime() {
     if (this.runtimeInitialized || this.isUnloading) return;
     this.runtimeInitialized = true;
+    await this.migrateLegacyKnowledgeLeaves();
 
     const refresh = debounce(() => this.refreshDashboard(), 500);
     this.registerEvent(this.app.vault.on("create", refresh));
@@ -5052,6 +5180,7 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
     this.isUnloading = true;
     if (this.startupTimer !== null) window.clearTimeout(this.startupTimer);
     this.startupTimer = null;
+    this.removeShellTheme();
     this.app.workspace.detachLeavesOfType(VIEW_TYPE);
     this.app.workspace.detachLeavesOfType(INBOX_VIEW_TYPE);
     this.app.workspace.detachLeavesOfType(KNOWLEDGE_VIEW_TYPE);
@@ -5068,6 +5197,43 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
 
   async saveSettings() {
     await this.saveData(this.settings);
+  }
+
+  applyShellTheme() {
+    document.body.classList.toggle(SHELL_THEME_CLASS, Boolean(this.settings.syncObsidianShellTheme));
+  }
+
+  removeShellTheme() {
+    document.body.classList.remove(SHELL_THEME_CLASS);
+  }
+
+  getKnowledgeLeaves() {
+    return [...KNOWLEDGE_OS_VIEW_TYPES].flatMap((type) => this.app.workspace.getLeavesOfType(type));
+  }
+
+  routeForType(type) {
+    return Object.entries(KNOWLEDGE_OS_ROUTES).find(([, config]) => config.type === type)?.[0] || null;
+  }
+
+  getLeafRouteState(leaf) {
+    let states = this.routeStateByLeaf.get(leaf);
+    if (!states) {
+      states = new Map();
+      this.routeStateByLeaf.set(leaf, states);
+    }
+    return states;
+  }
+
+  async migrateLegacyKnowledgeLeaves() {
+    if (this.settings.singleLeafMigrationVersion === SINGLE_LEAF_MIGRATION) return;
+    const leaves = this.getKnowledgeLeaves();
+    if (leaves.length > 1) {
+      const active = this.app.workspace.activeLeaf;
+      const keep = leaves.includes(active) ? active : leaves[0];
+      leaves.filter((leaf) => leaf !== keep).forEach((leaf) => leaf.detach());
+    }
+    this.settings.singleLeafMigrationVersion = SINGLE_LEAF_MIGRATION;
+    await this.saveSettings();
   }
 
   getDashboard() {
@@ -5127,108 +5293,60 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
     await wait(25);
   }
 
-  async activateView() {
-    let leaf = this.app.workspace.getLeavesOfType(VIEW_TYPE)[0];
-    if (!leaf) {
-      leaf = this.app.workspace.getLeaf("tab");
-      await leaf.setViewState({ type: VIEW_TYPE, active: true });
+  async activateRoute(route, options = {}) {
+    const config = KNOWLEDGE_OS_ROUTES[route];
+    if (!config) throw new Error(`Unknown Knowledge OS route: ${route}`);
+    let leaf = options.newLeaf ? null : options.sourceLeaf;
+    if (!leaf && !options.newLeaf) {
+      const active = this.app.workspace.activeLeaf;
+      if (active && KNOWLEDGE_OS_VIEW_TYPES.has(active.getViewState().type)) leaf = active;
+      else leaf = this.getKnowledgeLeaves()[0] || null;
     }
-    await this.revealKnowledgeLeaf(leaf);
-    if (this.settings.immersiveMode) {
-      this.app.workspace.leftSplit?.collapse();
-      this.app.workspace.rightSplit?.collapse();
-    }
+    if (!leaf) leaf = this.app.workspace.getLeaf("tab");
+    const serial = (this.navigationSerialByLeaf.get(leaf) || 0) + 1;
+    this.navigationSerialByLeaf.set(leaf, serial);
+    const previous = this.navigationQueueByLeaf.get(leaf) || Promise.resolve();
+    const navigation = previous.catch(() => undefined).then(async () => {
+      if (serial !== this.navigationSerialByLeaf.get(leaf)) return leaf;
+      const currentType = leaf.getViewState().type;
+      const currentRoute = this.routeForType(currentType);
+      if (currentRoute && typeof leaf.view?.getState === "function") {
+        this.getLeafRouteState(leaf).set(currentRoute, leaf.view.getState());
+      }
+      const state = options.state || this.getLeafRouteState(leaf).get(route) || {};
+      await leaf.setViewState({ type: config.type, state, active: true });
+      if (serial !== this.navigationSerialByLeaf.get(leaf)) return leaf;
+      await this.revealKnowledgeLeaf(leaf);
+      if (this.settings.immersiveMode) {
+        this.app.workspace.leftSplit?.collapse();
+        this.app.workspace.rightSplit?.collapse();
+      }
+      return leaf;
+    });
+    this.navigationQueueByLeaf.set(leaf, navigation);
+    return navigation;
   }
 
-  async activateInbox() {
-    let leaf = this.app.workspace.getLeavesOfType(INBOX_VIEW_TYPE)[0];
-    if (!leaf) {
-      leaf = this.app.workspace.getLeaf("tab");
-      await leaf.setViewState({ type: INBOX_VIEW_TYPE, active: true });
-    }
-    await this.revealKnowledgeLeaf(leaf);
-    if (this.settings.immersiveMode) {
-      this.app.workspace.leftSplit?.collapse();
-      this.app.workspace.rightSplit?.collapse();
-    }
-  }
+  activateView(options = {}) { return this.activateRoute("dashboard", options); }
+  activateInbox(options = {}) { return this.activateRoute("inbox", options); }
+  activateKnowledge(options = {}) { return this.activateRoute("knowledge", options); }
+  activateGraph(options = {}) { return this.activateRoute("graph", options); }
+  activateProjects(options = {}) { return this.activateRoute("projects", options); }
+  activateGantt(options = {}) { return this.activateRoute("gantt", options); }
+  activateAgents(options = {}) { return this.activateRoute("agents", options); }
+  activateAnalytics(options = {}) { return this.activateRoute("analytics", options); }
 
-  async activateKnowledge() {
-    let leaf = this.app.workspace.getLeavesOfType(KNOWLEDGE_VIEW_TYPE)[0];
-    if (!leaf) {
-      leaf = this.app.workspace.getLeaf("tab");
-      await leaf.setViewState({ type: KNOWLEDGE_VIEW_TYPE, active: true });
+  async openResource(target, options = {}) {
+    const leaf = options.newLeaf ? this.app.workspace.getLeaf("tab") : options.sourceLeaf || this.app.workspace.activeLeaf || this.app.workspace.getLeaf("tab");
+    if (target?.type && !target.path) {
+      await leaf.setViewState({ type: target.type, state: target.state || {}, active: true });
+    } else {
+      const file = target instanceof TFile ? target : this.app.vault.getAbstractFileByPath(normalizePath(target?.path || target));
+      if (!file) throw new Error(`未找到：${target?.path || target}`);
+      await leaf.openFile(file, { active: true });
     }
-    await this.revealKnowledgeLeaf(leaf);
-    if (this.settings.immersiveMode) {
-      this.app.workspace.leftSplit?.collapse();
-      this.app.workspace.rightSplit?.collapse();
-    }
-  }
-
-  async activateGraph() {
-    let leaf = this.app.workspace.getLeavesOfType(GRAPH_VIEW_TYPE)[0];
-    if (!leaf) {
-      leaf = this.app.workspace.getLeaf("tab");
-      await leaf.setViewState({ type: GRAPH_VIEW_TYPE, active: true });
-    }
-    await this.revealKnowledgeLeaf(leaf);
-    if (this.settings.immersiveMode) {
-      this.app.workspace.leftSplit?.collapse();
-      this.app.workspace.rightSplit?.collapse();
-    }
-  }
-
-  async activateProjects() {
-    let leaf = this.app.workspace.getLeavesOfType(PROJECT_VIEW_TYPE)[0];
-    if (!leaf) {
-      leaf = this.app.workspace.getLeaf("tab");
-      await leaf.setViewState({ type: PROJECT_VIEW_TYPE, active: true });
-    }
-    await this.revealKnowledgeLeaf(leaf);
-    if (this.settings.immersiveMode) {
-      this.app.workspace.leftSplit?.collapse();
-      this.app.workspace.rightSplit?.collapse();
-    }
-  }
-
-  async activateGantt() {
-    let leaf = this.app.workspace.getLeavesOfType(GANTT_VIEW_TYPE)[0];
-    if (!leaf) {
-      leaf = this.app.workspace.getLeaf("tab");
-      await leaf.setViewState({ type: GANTT_VIEW_TYPE, active: true });
-    }
-    await this.revealKnowledgeLeaf(leaf);
-    if (this.settings.immersiveMode) {
-      this.app.workspace.leftSplit?.collapse();
-      this.app.workspace.rightSplit?.collapse();
-    }
-  }
-
-  async activateAgents() {
-    let leaf = this.app.workspace.getLeavesOfType(AGENT_VIEW_TYPE)[0];
-    if (!leaf) {
-      leaf = this.app.workspace.getLeaf("tab");
-      await leaf.setViewState({ type: AGENT_VIEW_TYPE, active: true });
-    }
-    await this.revealKnowledgeLeaf(leaf);
-    if (this.settings.immersiveMode) {
-      this.app.workspace.leftSplit?.collapse();
-      this.app.workspace.rightSplit?.collapse();
-    }
-  }
-
-  async activateAnalytics() {
-    let leaf = this.app.workspace.getLeavesOfType(ANALYTICS_VIEW_TYPE)[0];
-    if (!leaf) {
-      leaf = this.app.workspace.getLeaf("tab");
-      await leaf.setViewState({ type: ANALYTICS_VIEW_TYPE, active: true });
-    }
-    await this.revealKnowledgeLeaf(leaf);
-    if (this.settings.immersiveMode) {
-      this.app.workspace.leftSplit?.collapse();
-      this.app.workspace.rightSplit?.collapse();
-    }
+    await this.app.workspace.revealLeaf(leaf);
+    return leaf;
   }
 
   async updateGraphSnapshot(currentEdges) {
@@ -5288,7 +5406,7 @@ module.exports = class AIKnowledgeOSPlugin extends Plugin {
         reviewed: false,
         error: "",
       });
-      await this.app.workspace.getLeaf("tab").openFile(outputFile);
+      await this.openResource(outputFile, { sourceLeaf: this.app.workspace.activeLeaf });
       new Notice(`${agent.name} 已完成，等待人工验收`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
